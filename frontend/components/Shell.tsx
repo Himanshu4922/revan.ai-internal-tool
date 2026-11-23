@@ -192,9 +192,8 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   const initials = (user.email || "U").slice(0, 2).toUpperCase();
-  // Collapsed rail expands on hover (Vector7-style overlay) without shifting main content.
-  const iconRail = collapsed && !hoverExpand;
-  const showLabels = !iconRail;
+  // Prefer collapsed width; hover expands as overlay. Keep DOM stable so icons don't jump.
+  const railCollapsed = collapsed && !hoverExpand;
 
   return (
     <div
@@ -202,7 +201,7 @@ export function Shell({ children }: { children: ReactNode }) {
     >
       <div className="sidebar-backdrop" role="presentation" onClick={() => setNavOpen(false)} />
       <aside
-        className={`sidebar${iconRail ? " collapsed" : ""}${collapsed && hoverExpand ? " hover-expanded" : ""}`}
+        className={`sidebar${collapsed ? " collapsed" : ""}${collapsed && hoverExpand ? " hover-expanded" : ""}`}
         id="primary-nav"
         aria-label="Primary"
         onMouseEnter={() => {
@@ -216,34 +215,22 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="sidebar-aura" aria-hidden />
 
         <div className="sidebar-brand">
-          {iconRail ? (
-            <button
-              type="button"
-              className="sidebar-icon-btn sidebar-brand-collapsed"
-              onClick={toggleCollapsed}
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-            >
-              <span className="sidebar-brand-mark">AK</span>
-            </button>
-          ) : (
-            <>
-              <span className="sidebar-brand-mark">AK</span>
-              <div className="sidebar-brand-copy">
-                <div className="sidebar-brand-text">Agni Key Monitor</div>
-                <span className="sidebar-brand-sub">API credits &amp; keys</span>
-              </div>
-              <button
-                type="button"
-                className="sidebar-icon-btn sidebar-collapse-btn"
-                onClick={toggleCollapsed}
-                aria-label="Collapse sidebar"
-                title="Collapse sidebar"
-              >
-                <CollapseIcon collapsed={false} />
-              </button>
-            </>
-          )}
+          <span className="sidebar-brand-mark" aria-hidden>
+            AK
+          </span>
+          <div className="sidebar-brand-copy">
+            <div className="sidebar-brand-text">Agni Key Monitor</div>
+            <span className="sidebar-brand-sub">API credits &amp; keys</span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-icon-btn sidebar-collapse-btn"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <CollapseIcon collapsed={collapsed && !hoverExpand} />
+          </button>
           <button
             type="button"
             className="sidebar-icon-btn sidebar-close-mobile"
@@ -262,7 +249,7 @@ export function Shell({ children }: { children: ReactNode }) {
             if (!items.length) return null;
             return (
               <div key={group.label} className="sidebar-group">
-                {showLabels ? <h3 className="sidebar-group-label">{group.label}</h3> : null}
+                <h3 className="sidebar-group-label">{group.label}</h3>
                 <ul>
                   {items.map((item) => {
                     const active =
@@ -272,14 +259,14 @@ export function Shell({ children }: { children: ReactNode }) {
                         <Link
                           href={item.href}
                           className={`sidebar-link${active ? " active" : ""}`}
-                          title={!showLabels ? item.label : undefined}
+                          title={railCollapsed ? item.label : undefined}
                           onClick={() => setNavOpen(false)}
                         >
                           <span className="sidebar-link-bar" aria-hidden />
                           <span className="sidebar-link-icon">
                             <NavIcon name={item.icon} />
                           </span>
-                          {showLabels ? <span className="sidebar-link-label">{item.label}</span> : null}
+                          <span className="sidebar-link-label">{item.label}</span>
                         </Link>
                       </li>
                     );
@@ -291,9 +278,9 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className={`sidebar-footer-tools${iconRail ? " stacked" : ""}`}>
+          <div className="sidebar-footer-tools">
             <ThemeToggle />
-            {showLabels ? <span className="sidebar-theme-label">Theme</span> : null}
+            <span className="sidebar-theme-label">Theme</span>
           </div>
 
           <div className="sidebar-user">
@@ -304,20 +291,16 @@ export function Shell({ children }: { children: ReactNode }) {
               aria-expanded={userMenu}
             >
               <span className="sidebar-avatar">{initials}</span>
-              {showLabels ? (
-                <>
-                  <span className="sidebar-user-meta">
-                    <span className="sidebar-user-email">{user.email}</span>
-                    <span className="sidebar-user-role">{user.role}</span>
-                  </span>
-                  <span className={`sidebar-chevron${userMenu ? " open" : ""}`} aria-hidden>
-                    ▾
-                  </span>
-                </>
-              ) : null}
+              <span className="sidebar-user-meta">
+                <span className="sidebar-user-email">{user.email}</span>
+                <span className="sidebar-user-role">{user.role}</span>
+              </span>
+              <span className={`sidebar-chevron${userMenu ? " open" : ""}`} aria-hidden>
+                ▾
+              </span>
             </button>
             {userMenu ? (
-              <div className={`sidebar-user-menu${iconRail ? " flyout" : ""}`}>
+              <div className={`sidebar-user-menu${railCollapsed ? " flyout" : ""}`}>
                 <Link href="/settings" className="sidebar-user-menu-item" onClick={() => setUserMenu(false)}>
                   Settings
                 </Link>
