@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { EmptyState, PageHeader, ProviderCell, RelativeTime } from "@/components/ui";
 import { api, APIKey, CreditSnapshot, ProjectEnv, ProjectWithMembers } from "@/lib/api";
+import { PROVIDER_VALUES, providerGroups } from "@/lib/providers";
 
 const emptyForm = {
   provider: "openai",
@@ -17,20 +18,8 @@ const emptyForm = {
   notes: "",
 };
 
-const PROVIDERS = [
-  "openai",
-  "anthropic",
-  "twilio",
-  "plivo",
-  "telnyx",
-  "stripe",
-  "sendgrid",
-  "gemini",
-  "pinecone",
-  "livekit",
-  "soniox",
-  "sarvam",
-];
+const PROVIDER_GROUPS = providerGroups();
+const OTHER_VALUE = "__other__";
 
 export default function KeysPage() {
   const router = useRouter();
@@ -225,17 +214,36 @@ export default function KeysPage() {
           <div className="form-grid">
             <div className="field">
               <label>Provider</label>
-              <input
-                list="providers"
-                value={form.provider}
-                onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                required
-              />
-              <datalist id="providers">
-                {PROVIDERS.map((p) => (
-                  <option key={p} value={p} />
+              <select
+                value={PROVIDER_VALUES.includes(form.provider) ? form.provider : OTHER_VALUE}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({
+                    ...form,
+                    provider: v === OTHER_VALUE ? "" : v,
+                  });
+                }}
+              >
+                {PROVIDER_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.options.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
-              </datalist>
+                <option value={OTHER_VALUE}>Other (custom)…</option>
+              </select>
+              {!PROVIDER_VALUES.includes(form.provider) ? (
+                <input
+                  style={{ marginTop: "0.5rem" }}
+                  placeholder="Custom provider id (e.g. my-vendor)"
+                  value={form.provider}
+                  onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                  required
+                />
+              ) : null}
             </div>
             <div className="field">
               <label>Label</label>

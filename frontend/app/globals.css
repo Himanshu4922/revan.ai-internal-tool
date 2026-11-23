@@ -150,6 +150,13 @@ a:focus-visible {
   width: var(--sidebar-collapsed-w);
 }
 
+/* Collapsed rail: expand over content on hover (does not push main) */
+.sidebar.hover-expanded {
+  width: var(--sidebar-w);
+  box-shadow: 8px 0 28px color-mix(in srgb, #000 18%, transparent);
+  z-index: 50;
+}
+
 .sidebar-aura {
   pointer-events: none;
   position: absolute;

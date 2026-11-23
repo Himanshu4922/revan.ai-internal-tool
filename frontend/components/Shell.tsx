@@ -113,6 +113,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [hoverExpand, setHoverExpand] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
   useEffect(() => {
@@ -158,17 +159,31 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   const initials = (user.email || "U").slice(0, 2).toUpperCase();
+  // Collapsed rail expands on hover (Vector7-style overlay) without shifting main content.
+  const iconRail = collapsed && !hoverExpand;
+  const showLabels = !iconRail;
 
   return (
     <div
       className={`app-shell${navOpen ? " nav-open" : ""}${collapsed ? " sidebar-collapsed" : ""}`}
     >
       <div className="sidebar-backdrop" role="presentation" onClick={() => setNavOpen(false)} />
-      <aside className={`sidebar${collapsed ? " collapsed" : ""}`} id="primary-nav" aria-label="Primary">
+      <aside
+        className={`sidebar${iconRail ? " collapsed" : ""}${collapsed && hoverExpand ? " hover-expanded" : ""}`}
+        id="primary-nav"
+        aria-label="Primary"
+        onMouseEnter={() => {
+          if (collapsed) setHoverExpand(true);
+        }}
+        onMouseLeave={() => {
+          setHoverExpand(false);
+          setUserMenu(false);
+        }}
+      >
         <div className="sidebar-aura" aria-hidden />
 
         <div className="sidebar-brand">
-          {collapsed ? (
+          {iconRail ? (
             <button
               type="button"
               className="sidebar-icon-btn sidebar-brand-collapsed"
@@ -214,7 +229,7 @@ export function Shell({ children }: { children: ReactNode }) {
             if (!items.length) return null;
             return (
               <div key={group.label} className="sidebar-group">
-                {!collapsed ? <h3 className="sidebar-group-label">{group.label}</h3> : null}
+                {showLabels ? <h3 className="sidebar-group-label">{group.label}</h3> : null}
                 <ul>
                   {items.map((item) => {
                     const active =
@@ -224,14 +239,14 @@ export function Shell({ children }: { children: ReactNode }) {
                         <Link
                           href={item.href}
                           className={`sidebar-link${active ? " active" : ""}`}
-                          title={collapsed ? item.label : undefined}
+                          title={!showLabels ? item.label : undefined}
                           onClick={() => setNavOpen(false)}
                         >
                           <span className="sidebar-link-bar" aria-hidden />
                           <span className="sidebar-link-icon">
                             <NavIcon name={item.icon} />
                           </span>
-                          {!collapsed ? <span className="sidebar-link-label">{item.label}</span> : null}
+                          {showLabels ? <span className="sidebar-link-label">{item.label}</span> : null}
                         </Link>
                       </li>
                     );
@@ -243,9 +258,9 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className={`sidebar-footer-tools${collapsed ? " stacked" : ""}`}>
+          <div className={`sidebar-footer-tools${iconRail ? " stacked" : ""}`}>
             <ThemeToggle />
-            {!collapsed ? <span className="sidebar-theme-label">Theme</span> : null}
+            {showLabels ? <span className="sidebar-theme-label">Theme</span> : null}
           </div>
 
           <div className="sidebar-user">
@@ -256,7 +271,7 @@ export function Shell({ children }: { children: ReactNode }) {
               aria-expanded={userMenu}
             >
               <span className="sidebar-avatar">{initials}</span>
-              {!collapsed ? (
+              {showLabels ? (
                 <>
                   <span className="sidebar-user-meta">
                     <span className="sidebar-user-email">{user.email}</span>
@@ -269,7 +284,7 @@ export function Shell({ children }: { children: ReactNode }) {
               ) : null}
             </button>
             {userMenu ? (
-              <div className={`sidebar-user-menu${collapsed ? " flyout" : ""}`}>
+              <div className={`sidebar-user-menu${iconRail ? " flyout" : ""}`}>
                 <Link href="/settings" className="sidebar-user-menu-item" onClick={() => setUserMenu(false)}>
                   Settings
                 </Link>
