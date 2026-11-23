@@ -22,7 +22,7 @@ cp .env.example .env
 #   ADMIN_EMAIL / ADMIN_PASSWORD
 #   POSTGRES_* and DATABASE_URL (password must match)
 #   COOKIE_SECURE=true behind HTTPS
-#   PERISKOPE_* and CALLING_* / ALERT_CALL_* for alerts
+#   WHATSAPPX_* and CALLING_* / ALERT_CALL_* for alerts
 #   CORS_ORIGINS=https://keys.your-domain
 
 docker compose up -d --build
@@ -44,7 +44,7 @@ The Next.js app rewrites `/api/*` to the backend container (`API_INTERNAL_URL=ht
 
 ## Alerts
 
-- **WhatsApp:** set `PERISKOPE_TOKEN`, `PERISKOPE_CHAT_ID` (and optional `PERISKOPE_PHONE`).
+- **WhatsApp (local Periskope / WhatsAppX only):** set `WHATSAPPX_BASE_URL` (e.g. `http://host.docker.internal:8080`), `WHATSAPPX_API_KEY` (write-scope key), and `WHATSAPPX_TO` (phone digits or `…@g.us` / `…@lid`). Do not use `api.periskope.app`.
 - **Calling:** set `CALLING_API_BASE`, `CALLING_INTERNAL_KEY`, `ALERT_CALL_AGENT_ID`, `ALERT_CALL_FROM`, `ALERT_CALL_TO`, `ALERT_CALL_ORG_ID`.
 
 Alerts fire on `low` / `exhausted` with cooldown (`ALERT_COOLDOWN_HOURS`, default 6).

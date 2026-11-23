@@ -6,7 +6,7 @@ Small internal tool to store Agni third-party API keys (encrypted), check whethe
 - **Viewer:** dashboard + project list (never sees raw secrets)
 - **Projects** own team members; keys belong to a project + **env** (`prod` / `staging` / `testing` / `other`)
 - Dashboard is **project-wise** (filter, summary, team); alerts include project + team
-- Low/exhausted credit alerts via **Periskope WhatsApp** and **Agni calling**
+- Low/exhausted credit alerts via **local Periskope / WhatsAppX** and **Agni calling**
 - Runs on the **existing Oracle Free Tier VM** — own Docker Compose stack (Postgres + API + UI). No new VM. Does not use `agniai_db`.
 
 ## Stack

@@ -26,10 +26,10 @@ type Config struct {
 	AlertLowThreshold float64
 	AlertCooldown     time.Duration
 
-	PeriskopeToken   string
-	PeriskopePhone   string
-	PeriskopeChatID  string
-	PeriskopeAPIBase string
+	// Local Periskope / WhatsAppX (self-hosted). Never api.periskope.app.
+	WhatsAppXBaseURL string
+	WhatsAppXAPIKey  string
+	WhatsAppXTo      string // phone digits, or chat jid (...@g.us / ...@lid)
 
 	CallingAPIBase     string
 	CallingInternalKey string
@@ -59,10 +59,9 @@ func Load() Config {
 		AlertLowThreshold: floatEnv("ALERT_LOW_THRESHOLD", 5),
 		AlertCooldown:     hours("ALERT_COOLDOWN_HOURS", 6),
 
-		PeriskopeToken:   getenv("PERISKOPE_TOKEN", ""),
-		PeriskopePhone:   getenv("PERISKOPE_PHONE", ""),
-		PeriskopeChatID:  getenv("PERISKOPE_CHAT_ID", ""),
-		PeriskopeAPIBase: strings.TrimRight(getenv("PERISKOPE_API_BASE", "https://api.periskope.app"), "/"),
+		WhatsAppXBaseURL: strings.TrimRight(getenv("WHATSAPPX_BASE_URL", "http://host.docker.internal:8080"), "/"),
+		WhatsAppXAPIKey:  getenv("WHATSAPPX_API_KEY", ""),
+		WhatsAppXTo:      strings.TrimSpace(getenv("WHATSAPPX_TO", "")),
 
 		CallingAPIBase:     strings.TrimRight(getenv("CALLING_API_BASE", "https://api.ravan.ai"), "/"),
 		CallingInternalKey: getenv("CALLING_INTERNAL_KEY", ""),

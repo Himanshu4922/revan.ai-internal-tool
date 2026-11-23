@@ -86,28 +86,22 @@ func (s *Service) cooledDown(ctx context.Context, key models.APIKey, channel str
 }
 
 func (s *Service) sendWhatsApp(ctx context.Context, key models.APIKey, msg string) {
-	if s.cfg.PeriskopeToken == "" || s.cfg.PeriskopeChatID == "" {
+	if s.cfg.WhatsAppXBaseURL == "" || s.cfg.WhatsAppXAPIKey == "" || s.cfg.WhatsAppXTo == "" {
 		return
 	}
 	if s.cooledDown(ctx, key, "whatsapp") {
 		return
 	}
-	payload := map[string]any{
-		"chat_id": s.cfg.PeriskopeChatID,
-		"message": msg,
-	}
+	payload := whatsAppXSendPayload(s.cfg.WhatsAppXTo, msg)
 	body, _ := json.Marshal(payload)
-	url := s.cfg.PeriskopeAPIBase + "/v1/message/send"
+	url := s.cfg.WhatsAppXBaseURL + "/api/conversations"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		_ = s.store.InsertAlert(ctx, alertEv(key, "whatsapp", msg, false, err.Error()))
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.cfg.PeriskopeToken)
-	if s.cfg.PeriskopePhone != "" {
-		req.Header.Set("x-phone", s.cfg.PeriskopePhone)
-	}
+	req.Header.Set("Authorization", "Bearer "+s.cfg.WhatsAppXAPIKey)
 	resp, err := s.client.Do(req)
 	if err != nil {
 		_ = s.store.InsertAlert(ctx, alertEv(key, "whatsapp", msg, false, err.Error()))
@@ -121,6 +115,23 @@ func (s *Service) sendWhatsApp(ctx context.Context, key models.APIKey, msg strin
 		ev.Error = fmt.Sprintf("HTTP %d: %s", resp.StatusCode, string(rb))
 	}
 	_ = s.store.InsertAlert(ctx, ev)
+}
+
+// whatsAppXSendPayload mirrors local-periskope / WhatsAppX POST /api/conversations.
+// Groups and linked-id chats use chat_jid; everything else is a phone number.
+func whatsAppXSendPayload(to, body string) map[string]any {
+	to = strings.TrimSpace(to)
+	if strings.HasSuffix(to, "@g.us") || strings.HasSuffix(to, "@lid") {
+		return map[string]any{"chat_jid": to, "body": body}
+	}
+	phone := to
+	if i := strings.IndexByte(phone, '@'); i >= 0 {
+		phone = phone[:i]
+	}
+	if i := strings.IndexByte(phone, ':'); i >= 0 {
+		phone = phone[:i]
+	}
+	return map[string]any{"phone": phone, "body": body}
 }
 
 func (s *Service) sendCall(ctx context.Context, key models.APIKey, msg string) {

@@ -29,6 +29,9 @@ services:
     environment:
       SERVER_PORT: "8080"
       DATABASE_URL: ${DATABASE_URL}
+    # Reach host-bound local-periskope / WhatsAppX (WHATSAPPX_BASE_URL=http://host.docker.internal:…)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8095}:8080"
     depends_on:
