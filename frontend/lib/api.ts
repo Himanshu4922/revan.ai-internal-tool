@@ -96,11 +96,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
-  signup: (body: { email: string; password: string; company_name?: string }) =>
-    request<{ user: User; token: string }>("/api/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   me: () => request<User>("/api/auth/me"),
   dashboard: (projectId?: string) =>

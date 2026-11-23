@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { api } from "@/lib/api";
@@ -35,21 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell
-      title="Welcome back"
-      footer={
-        <>
-          <p>
-            Don&apos;t have an account? <Link href="/signup">Start free</Link>
-          </p>
-          <p>
-            <Link href="/" className="auth-back">
-              ← Back to home
-            </Link>
-          </p>
-        </>
-      }
-    >
+    <AuthShell title="Sign in" subtitle="Use your seeded admin or viewer account.">
       <form onSubmit={onSubmit} className="auth-form">
         {error ? <div className="err">{error}</div> : null}
         <div className="field">
@@ -65,9 +50,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="field">
-          <div className="field-label-row">
-            <label htmlFor="password">Password</label>
-          </div>
+          <label htmlFor="password">Password</label>
           <input
             id="password"
             type="password"

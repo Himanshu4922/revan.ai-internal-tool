@@ -49,9 +49,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <p className="muted" style={{ margin: 0 }}>
-            New accounts can sign up at <code className="mono">/signup</code> (admin role). Seeded
-            admin/viewer users from server env still work. Password reset is not available in this
-            build.
+            Accounts are created from server env (<code className="mono">ADMIN_*</code> /{" "}
+            <code className="mono">VIEWER_*</code>). Password reset is not available in this build.
           </p>
         </div>
 

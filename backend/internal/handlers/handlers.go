@@ -41,12 +41,6 @@ type loginReq struct {
 	Password string `json:"password"`
 }
 
-type signupReq struct {
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	CompanyName string `json:"company_name"`
-}
-
 func (a *API) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,62 +59,6 @@ func (a *API) Login(c *gin.Context) {
 	}
 	a.auth.SetCookie(c, tok)
 	c.JSON(http.StatusOK, gin.H{
-		"user":  gin.H{"id": u.ID, "email": u.Email, "role": u.Role},
-		"token": tok,
-	})
-}
-
-func (a *API) Signup(c *gin.Context) {
-	var req signupReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
-		return
-	}
-	email := strings.TrimSpace(strings.ToLower(req.Email))
-	password := req.Password
-	company := strings.TrimSpace(req.CompanyName)
-	if email == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
-		return
-	}
-	if len(password) < 8 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
-		return
-	}
-	if !strings.Contains(email, "@") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid email"})
-		return
-	}
-
-	u, err := a.store.CreateUser(c.Request.Context(), email, password, models.RoleAdmin)
-	if err != nil {
-		if err.Error() == "email already registered" {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create account"})
-		return
-	}
-
-	if company != "" {
-		p := &models.Project{
-			ID:          uuid.New(),
-			Name:        company,
-			Description: "Created at signup",
-		}
-		if err := a.store.CreateProject(c.Request.Context(), p); err != nil {
-			// Account is usable even if the starter project fails.
-			_ = err
-		}
-	}
-
-	tok, err := a.auth.IssueToken(u)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token issue failed"})
-		return
-	}
-	a.auth.SetCookie(c, tok)
-	c.JSON(http.StatusCreated, gin.H{
 		"user":  gin.H{"id": u.ID, "email": u.Email, "role": u.Role},
 		"token": tok,
 	})
