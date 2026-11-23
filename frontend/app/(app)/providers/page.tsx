@@ -8,8 +8,9 @@ import {
   ProviderCell,
   RelativeTime,
   StatusBadge,
-} from "@/components/ui";
+} from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
+import { Button } from "@/components/ui/button";
 import { api, ProjectDashboard, User } from "@/lib/api";
 import { groupByProvider } from "@/lib/dashboardStats";
 import { TablePageSkeleton } from "@/components/Skeleton";
@@ -55,9 +56,9 @@ export default function ProvidersPage() {
         title="Providers"
         toolbar={
           user?.role === "admin" ? (
-            <Link className="btn primary" href="/keys">
-              Connect provider
-            </Link>
+            <Button asChild>
+              <Link href="/keys">Connect provider</Link>
+            </Button>
           ) : null
         }
       >
@@ -68,9 +69,9 @@ export default function ProvidersPage() {
             title="No providers connected"
             action={
               user?.role === "admin" ? (
-                <Link className="btn primary" href="/keys">
-                  Add an API key
-                </Link>
+                <Button asChild>
+                  <Link href="/keys">Add an API key</Link>
+                </Button>
               ) : null
             }
           >

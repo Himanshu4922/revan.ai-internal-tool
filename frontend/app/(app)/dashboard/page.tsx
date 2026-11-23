@@ -12,7 +12,7 @@ import {
   StatusBadge,
   SvgBarChart,
   SvgDonut,
-} from "@/components/ui";
+} from "@/components/widgets";
 import { api, ProjectDashboard, ProjectWithMembers, User } from "@/lib/api";
 import {
   attentionRows,

@@ -7,7 +7,7 @@ import {
   Money,
   PageHeader,
   SvgBarChart,
-} from "@/components/ui";
+} from "@/components/widgets";
 import { api, ProjectDashboard } from "@/lib/api";
 import {
   computeTotals,

@@ -1,9 +1,12 @@
 "use client";
 
-import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
+import { Button } from "@/components/ui/button";
+import { MemberDialog } from "@/components/dialogs/MemberDialog";
+import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { api, ProjectMember, ProjectWithMembers, User } from "@/lib/api";
 import { TablePageSkeleton } from "@/components/Skeleton";
 
@@ -12,20 +15,12 @@ export default function ProjectsPage() {
   const [items, setItems] = useState<ProjectWithMembers[]>([]);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [editId, setEditId] = useState<string | null>(null);
-  const [showProjectForm, setShowProjectForm] = useState(false);
-  const [showMemberForm, setShowMemberForm] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [memberOpen, setMemberOpen] = useState(false);
+  const [editProject, setEditProject] = useState<ProjectWithMembers | null>(null);
+  const [memberProjectId, setMemberProjectId] = useState("");
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [memberForm, setMemberForm] = useState({
-    projectId: "",
-    name: "",
-    email: "",
-    phone: "",
-    role_label: "",
-  });
 
   const load = useCallback(async () => {
     try {
@@ -45,33 +40,21 @@ export default function ProjectsPage() {
     load();
   }, [load]);
 
-  async function saveProject(e: FormEvent) {
-    e.preventDefault();
-    if (user?.role !== "admin") return;
-    setError("");
-    try {
-      if (editId) {
-        await api.updateProject(editId, { name: name.trim(), description });
-        setMsg("Project updated");
-      } else {
-        await api.createProject({ name: name.trim(), description });
-        setMsg("Project created");
-      }
-      setName("");
-      setDescription("");
-      setEditId(null);
-      setShowProjectForm(false);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
-    }
+  function openCreateProject() {
+    setEditProject(null);
+    setProjectOpen(true);
+    setMsg("");
   }
 
-  function startEdit(p: ProjectWithMembers) {
-    setEditId(p.id);
-    setName(p.name);
-    setDescription(p.description || "");
-    setShowProjectForm(true);
+  function openEditProject(p: ProjectWithMembers) {
+    setEditProject(p);
+    setProjectOpen(true);
+    setMsg("");
+  }
+
+  function openAddMember(projectId = "") {
+    setMemberProjectId(projectId);
+    setMemberOpen(true);
     setMsg("");
   }
 
@@ -82,25 +65,6 @@ export default function ProjectsPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
-    }
-  }
-
-  async function addMember(e: FormEvent) {
-    e.preventDefault();
-    if (user?.role !== "admin") return;
-    try {
-      await api.addMember(memberForm.projectId, {
-        name: memberForm.name.trim(),
-        email: memberForm.email.trim(),
-        phone: memberForm.phone.trim(),
-        role_label: memberForm.role_label.trim(),
-      });
-      setMemberForm({ projectId: "", name: "", email: "", phone: "", role_label: "" });
-      setShowMemberForm(false);
-      setMsg("Member added");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Add member failed");
     }
   }
 
@@ -123,30 +87,14 @@ export default function ProjectsPage() {
         toolbar={
           user?.role === "admin" ? (
             <>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => {
-                  setShowMemberForm((v) => !v);
-                  setShowProjectForm(false);
-                }}
+              <Button
+                variant="outline"
+                onClick={() => openAddMember()}
                 disabled={items.length === 0}
               >
                 Add member
-              </button>
-              <button
-                className="btn primary"
-                type="button"
-                onClick={() => {
-                  setEditId(null);
-                  setName("");
-                  setDescription("");
-                  setShowProjectForm(true);
-                  setShowMemberForm(false);
-                }}
-              >
-                New project
-              </button>
+              </Button>
+              <Button onClick={openCreateProject}>New project</Button>
             </>
           ) : null
         }
@@ -154,121 +102,12 @@ export default function ProjectsPage() {
         {error ? <div className="err" style={{ margin: "0.75rem" }}>{error}</div> : null}
         {msg ? <p className="ok-msg" style={{ margin: "0.75rem" }}>{msg}</p> : null}
 
-        {user?.role === "admin" && showProjectForm ? (
-          <form className="sheet-panel" onSubmit={saveProject}>
-            <h2 className="card-title">{editId ? "Update project" : "Add project"}</h2>
-            <div className="form-grid" style={{ marginTop: "0.85rem" }}>
-              <div className="field">
-                <label>Name</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="e.g. Agni Calling"
-                />
-              </div>
-              <div className="field">
-                <label>Description</label>
-                <input value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
-            </div>
-            <div className="row-actions">
-              <button className="btn primary" type="submit">
-                {editId ? "Save" : "Create"}
-              </button>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => {
-                  setEditId(null);
-                  setName("");
-                  setDescription("");
-                  setShowProjectForm(false);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : null}
-
-        {user?.role === "admin" && showMemberForm ? (
-          <form className="sheet-panel" onSubmit={addMember}>
-            <h2 className="card-title">Add team member</h2>
-            <p className="card-sub" style={{ marginBottom: "0.85rem" }}>
-              Shown on low-credit alerts for the project
-            </p>
-            <div className="form-grid">
-              <div className="field">
-                <label>Project</label>
-                <select
-                  value={memberForm.projectId}
-                  onChange={(e) => setMemberForm({ ...memberForm, projectId: e.target.value })}
-                  required
-                >
-                  <option value="">Select…</option>
-                  {items.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label>Name</label>
-                <input
-                  value={memberForm.name}
-                  onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="field">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={memberForm.email}
-                  onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
-                />
-              </div>
-              <div className="field">
-                <label>Phone</label>
-                <input
-                  value={memberForm.phone}
-                  onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
-                />
-              </div>
-              <div className="field">
-                <label>Role on team</label>
-                <input
-                  value={memberForm.role_label}
-                  onChange={(e) => setMemberForm({ ...memberForm, role_label: e.target.value })}
-                  placeholder="e.g. owner, on-call"
-                />
-              </div>
-            </div>
-            <div className="row-actions">
-              <button className="btn primary" type="submit">
-                Add member
-              </button>
-              <button className="btn" type="button" onClick={() => setShowMemberForm(false)}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : null}
-
         {items.length === 0 ? (
           <EmptyState
             title="No projects yet"
             action={
               user?.role === "admin" ? (
-                <button
-                  className="btn primary"
-                  type="button"
-                  onClick={() => setShowProjectForm(true)}
-                >
-                  Create project
-                </button>
+                <Button onClick={openCreateProject}>Create project</Button>
               ) : null
             }
           >
@@ -297,13 +136,13 @@ export default function ProjectsPage() {
                       </td>
                       <td className="mono">{members.length}</td>
                       <td>
-                        <button
-                          className="btn sm ghost"
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setExpanded(open ? null : p.id)}
                         >
                           {open ? "Hide" : "View"} team
-                        </button>
+                        </Button>
                       </td>
                       <td>
                         <div className="row-actions">
@@ -312,16 +151,19 @@ export default function ProjectsPage() {
                           </Link>
                           {user?.role === "admin" ? (
                             <>
-                              <button className="btn sm" type="button" onClick={() => startEdit(p)}>
+                              <Button size="sm" variant="outline" onClick={() => openAddMember(p.id)}>
+                                Add member
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openEditProject(p)}>
                                 Edit
-                              </button>
-                              <button
-                                className="btn sm danger"
-                                type="button"
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
                                 onClick={() => removeProject(p.id)}
                               >
                                 Delete
-                              </button>
+                              </Button>
                             </>
                           ) : null}
                         </div>
@@ -356,13 +198,13 @@ export default function ProjectsPage() {
                                     <td className="muted">{m.phone || "—"}</td>
                                     <td>
                                       {user?.role === "admin" ? (
-                                        <button
-                                          className="btn sm danger"
-                                          type="button"
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
                                           onClick={() => removeMember(p.id, m)}
                                         >
                                           Remove
-                                        </button>
+                                        </Button>
                                       ) : null}
                                     </td>
                                   </tr>
@@ -380,6 +222,44 @@ export default function ProjectsPage() {
           </table>
         )}
       </DataSheet>
+
+      <ProjectDialog
+        open={projectOpen}
+        onOpenChange={setProjectOpen}
+        mode={editProject ? "edit" : "create"}
+        initial={
+          editProject
+            ? { name: editProject.name, description: editProject.description || "" }
+            : undefined
+        }
+        onSubmit={async (values) => {
+          if (editProject) {
+            await api.updateProject(editProject.id, values);
+            setMsg("Project updated");
+          } else {
+            await api.createProject(values);
+            setMsg("Project created");
+          }
+          await load();
+        }}
+      />
+
+      <MemberDialog
+        open={memberOpen}
+        onOpenChange={setMemberOpen}
+        projects={items.map((p) => ({ id: p.id, name: p.name }))}
+        initialProjectId={memberProjectId}
+        onSubmit={async (values) => {
+          await api.addMember(values.projectId, {
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            role_label: values.role_label,
+          });
+          setMsg("Member added");
+          await load();
+        }}
+      />
     </AdminSheet>
   );
 }

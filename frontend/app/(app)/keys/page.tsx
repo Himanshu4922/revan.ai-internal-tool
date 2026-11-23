@@ -1,35 +1,22 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { EmptyState, ProviderCell, RelativeTime } from "@/components/ui";
+import { EmptyState, ProviderCell, RelativeTime } from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
-import { api, APIKey, CreditSnapshot, ProjectEnv, ProjectWithMembers } from "@/lib/api";
-import { PROVIDER_VALUES, providerGroups } from "@/lib/providers";
+import { Button } from "@/components/ui/button";
+import { KeyDialog, keyToForm, type KeyFormValues } from "@/components/dialogs/KeyDialog";
+import { api, APIKey, CreditSnapshot, ProjectWithMembers } from "@/lib/api";
 import { TablePageSkeleton } from "@/components/Skeleton";
-
-const emptyForm = {
-  provider: "openai",
-  label: "",
-  project_id: "",
-  project_env: "prod" as ProjectEnv,
-  secret: "",
-  meta: "",
-  notes: "",
-};
-
-const PROVIDER_GROUPS = providerGroups();
-const OTHER_VALUE = "__other__";
 
 export default function KeysPage() {
   const router = useRouter();
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [projects, setProjects] = useState<ProjectWithMembers[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, CreditSnapshot | undefined>>({});
-  const [form, setForm] = useState(emptyForm);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editKey, setEditKey] = useState<APIKey | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
@@ -68,43 +55,22 @@ export default function KeysPage() {
     load();
   }, [load]);
 
-  function startEdit(k: APIKey) {
-    setEditId(k.id);
-    setForm({
-      provider: k.provider,
-      label: k.label || "",
-      project_id: k.project_id,
-      project_env: k.project_env,
-      secret: "",
-      meta: k.meta ? JSON.stringify(k.meta, null, 2) : "",
-      notes: k.notes || "",
-    });
-    setShowForm(true);
+  function openCreate() {
+    setEditKey(null);
+    setDialogOpen(true);
     setMsg("");
   }
 
-  function resetForm() {
-    setEditId(null);
-    setForm(emptyForm);
-    setShowForm(false);
+  function openEdit(k: APIKey) {
+    setEditKey(k);
+    setDialogOpen(true);
+    setMsg("");
   }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setMsg("");
-    if (!form.project_id) {
-      setError("Create a project first, then assign this key to it");
-      return;
-    }
-    let meta: Record<string, unknown> | undefined;
+  async function saveKey(form: KeyFormValues) {
+    let meta: Record<string, unknown> = {};
     if (form.meta.trim()) {
-      try {
-        meta = JSON.parse(form.meta);
-      } catch {
-        setError("Meta must be valid JSON");
-        return;
-      }
+      meta = JSON.parse(form.meta) as Record<string, unknown>;
     }
     const body: Record<string, unknown> = {
       provider: form.provider.trim(),
@@ -112,27 +78,18 @@ export default function KeysPage() {
       project_id: form.project_id,
       project_env: form.project_env,
       notes: form.notes,
-      meta: meta || {},
+      meta,
     };
-    try {
-      if (editId) {
-        if (form.secret.trim()) body.secret = form.secret.trim();
-        await api.updateKey(editId, body);
-        setMsg("Key updated");
-      } else {
-        if (!form.secret.trim()) {
-          setError("Secret is required for new keys");
-          return;
-        }
-        body.secret = form.secret.trim();
-        await api.createKey(body);
-        setMsg("Key created");
-      }
-      resetForm();
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+    if (editKey) {
+      if (form.secret.trim()) body.secret = form.secret.trim();
+      await api.updateKey(editKey.id, body);
+      setMsg("Key updated");
+    } else {
+      body.secret = form.secret.trim();
+      await api.createKey(body);
+      setMsg("Key created");
     }
+    await load();
   }
 
   async function remove(id: string) {
@@ -156,9 +113,8 @@ export default function KeysPage() {
   }
 
   async function copyHint(hint: string, id: string) {
-    const text = `…${hint}`;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(`…${hint}`);
       setCopied(id);
       setTimeout(() => setCopied(null), 1500);
     } catch {
@@ -174,22 +130,12 @@ export default function KeysPage() {
         title="API Keys"
         toolbar={
           <>
-            <Link className="btn" href="/projects">
-              Projects
-            </Link>
-            <button
-              className="btn primary"
-              type="button"
-              onClick={() => {
-                setEditId(null);
-                setForm(emptyForm);
-                setShowForm(true);
-                setMsg("");
-              }}
-              disabled={projects.length === 0}
-            >
+            <Button variant="outline" asChild>
+              <Link href="/projects">Projects</Link>
+            </Button>
+            <Button onClick={openCreate} disabled={projects.length === 0}>
               Connect provider
-            </button>
+            </Button>
           </>
         }
       >
@@ -200,127 +146,20 @@ export default function KeysPage() {
           <EmptyState
             title="Create a project first"
             action={
-              <Link className="btn primary" href="/projects">
-                Go to Projects
-              </Link>
+              <Button asChild>
+                <Link href="/projects">Go to Projects</Link>
+              </Button>
             }
           >
             Keys must belong to a project and environment before they can be added.
           </EmptyState>
         ) : null}
 
-        {showForm ? (
-          <form className="sheet-panel" onSubmit={onSubmit}>
-            <h2 className="card-title">{editId ? "Update key" : "Add key"}</h2>
-            <p className="card-sub" style={{ marginBottom: "1rem" }}>
-              Assign a provider secret to a project + env
-            </p>
-            <div className="form-grid">
-              <div className="field">
-                <label>Provider</label>
-                <select
-                  value={PROVIDER_VALUES.includes(form.provider) ? form.provider : OTHER_VALUE}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setForm({
-                      ...form,
-                      provider: v === OTHER_VALUE ? "" : v,
-                    });
-                  }}
-                >
-                  {PROVIDER_GROUPS.map((g) => (
-                    <optgroup key={g.group} label={g.group}>
-                      {g.options.map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                  <option value={OTHER_VALUE}>Other (custom)…</option>
-                </select>
-                {!PROVIDER_VALUES.includes(form.provider) ? (
-                  <input
-                    style={{ marginTop: "0.5rem" }}
-                    placeholder="Custom provider id (e.g. my-vendor)"
-                    value={form.provider}
-                    onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                    required
-                  />
-                ) : null}
-              </div>
-              <div className="field">
-                <label>Label</label>
-                <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-              </div>
-              <div className="field">
-                <label>Project</label>
-                <select
-                  value={form.project_id}
-                  onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                  required
-                >
-                  <option value="">Select…</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label>Env</label>
-                <select
-                  value={form.project_env}
-                  onChange={(e) => setForm({ ...form, project_env: e.target.value as ProjectEnv })}
-                >
-                  <option value="prod">prod</option>
-                  <option value="staging">staging</option>
-                  <option value="testing">testing</option>
-                  <option value="other">other</option>
-                </select>
-              </div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label>Secret {editId ? "(leave blank to keep)" : ""}</label>
-                <input
-                  type="password"
-                  value={form.secret}
-                  onChange={(e) => setForm({ ...form, secret: e.target.value })}
-                  autoComplete="off"
-                  required={!editId}
-                />
-              </div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label>Meta JSON (e.g. Twilio account_sid)</label>
-                <textarea
-                  rows={3}
-                  value={form.meta}
-                  onChange={(e) => setForm({ ...form, meta: e.target.value })}
-                  placeholder='{"account_sid":"AC..."}'
-                />
-              </div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label>Notes</label>
-                <textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="row-actions">
-              <button className="btn primary" type="submit" disabled={projects.length === 0}>
-                {editId ? "Save changes" : "Add key"}
-              </button>
-              <button className="btn" type="button" onClick={resetForm}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : null}
-
-        {keys.length === 0 && projects.length > 0 && !showForm ? (
-          <EmptyState title="No keys yet">
+        {keys.length === 0 && projects.length > 0 ? (
+          <EmptyState
+            title="No keys yet"
+            action={<Button onClick={openCreate}>Connect provider</Button>}
+          >
             Use Connect provider to add an encrypted credential.
           </EmptyState>
         ) : keys.length > 0 ? (
@@ -353,14 +192,14 @@ export default function KeysPage() {
                     <td>
                       <span className="hint-copy">
                         <span className="mono">…{k.key_hint}</span>
-                        <button
-                          className="btn sm ghost"
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => copyHint(k.key_hint, k.id)}
                           aria-label="Copy key hint"
                         >
                           {copied === k.id ? "Copied" : "Copy"}
-                        </button>
+                        </Button>
                       </span>
                     </td>
                     <td>
@@ -374,15 +213,15 @@ export default function KeysPage() {
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button className="btn sm" type="button" onClick={() => startEdit(k)}>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(k)}>
                           Edit
-                        </button>
-                        <button className="btn sm" type="button" onClick={() => check(k.id)}>
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => check(k.id)}>
                           Check
-                        </button>
-                        <button className="btn sm danger" type="button" onClick={() => remove(k.id)}>
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => remove(k.id)}>
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -392,6 +231,15 @@ export default function KeysPage() {
           </table>
         ) : null}
       </DataSheet>
+
+      <KeyDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        projects={projects}
+        mode={editKey ? "edit" : "create"}
+        initial={editKey ? keyToForm(editKey) : undefined}
+        onSubmit={saveKey}
+      />
     </AdminSheet>
   );
 }

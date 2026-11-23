@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/widgets";
 import { AdminPad } from "@/components/DataSheet";
 import { api, User } from "@/lib/api";
 import { SettingsSkeleton } from "@/components/Skeleton";
