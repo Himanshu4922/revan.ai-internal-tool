@@ -10,6 +10,7 @@ import {
   StatusBadge,
 } from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
+import { SheetSearch } from "@/components/SheetSearch";
 import { Button } from "@/components/ui/button";
 import { api, ProjectDashboard, User } from "@/lib/api";
 import { groupByProvider } from "@/lib/dashboardStats";
@@ -19,6 +20,7 @@ export default function ProvidersPage() {
   const [projects, setProjects] = useState<ProjectDashboard[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -40,6 +42,12 @@ export default function ProvidersPage() {
 
   const providers = useMemo(() => groupByProvider(projects), [projects]);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return providers;
+    return providers.filter((p) => p.provider.toLowerCase().includes(q));
+  }, [providers, search]);
+
   function primaryStatus(p: (typeof providers)[0]) {
     if (p.exhausted > 0) return "exhausted";
     if (p.error > 0) return "error";
@@ -48,18 +56,32 @@ export default function ProvidersPage() {
     return "unknown";
   }
 
+  const countLabel =
+    filtered.length === providers.length
+      ? String(providers.length)
+      : `${filtered.length} of ${providers.length}`;
+
   if (loading) return <TablePageSkeleton title="Providers" />;
 
   return (
     <AdminSheet>
       <DataSheet
         title="Providers"
+        count={countLabel}
         toolbar={
-          user?.role === "admin" ? (
-            <Button asChild>
-              <Link href="/keys">Connect provider</Link>
-            </Button>
-          ) : null
+          <>
+            <SheetSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Search providers"
+              aria-label="Search providers"
+            />
+            {user?.role === "admin" ? (
+              <Button size="sm" asChild>
+                <Link href="/keys">Connect provider</Link>
+              </Button>
+            ) : null}
+          </>
         }
       >
         {error ? <div className="err" style={{ margin: "0.75rem" }}>{error}</div> : null}
@@ -77,6 +99,10 @@ export default function ProvidersPage() {
           >
             Providers appear here once keys are attached to a project.
           </EmptyState>
+        ) : filtered.length === 0 ? (
+          <div className="px-4 py-16 text-center text-[13px] text-[var(--muted)]">
+            No providers match this search.
+          </div>
         ) : (
           <table className="sheet-table">
             <thead>
@@ -90,7 +116,7 @@ export default function ProvidersPage() {
               </tr>
             </thead>
             <tbody>
-              {providers.map((p) => {
+              {filtered.map((p) => {
                 const status = primaryStatus(p);
                 return (
                   <tr key={p.provider}>

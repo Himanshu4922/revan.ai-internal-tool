@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EmptyState, ProviderCell, RelativeTime } from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
+import { SheetSearch } from "@/components/SheetSearch";
 import { Button } from "@/components/ui/button";
 import { KeyDialog, keyToForm, type KeyFormValues } from "@/components/dialogs/KeyDialog";
 import { api, APIKey, CreditSnapshot, ProjectWithMembers } from "@/lib/api";
@@ -15,6 +16,7 @@ export default function KeysPage() {
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [projects, setProjects] = useState<ProjectWithMembers[]>([]);
   const [snapshots, setSnapshots] = useState<Record<string, CreditSnapshot | undefined>>({});
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editKey, setEditKey] = useState<APIKey | null>(null);
   const [error, setError] = useState("");
@@ -122,18 +124,39 @@ export default function KeysPage() {
     }
   }
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return keys;
+    return keys.filter((k) => {
+      const snap = snapshots[k.id];
+      return `${k.provider} ${k.label || ""} ${k.project_name || ""} ${k.project_env} ${k.key_hint} ${snap?.status || ""}`
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [keys, search, snapshots]);
+
+  const countLabel =
+    filtered.length === keys.length ? String(keys.length) : `${filtered.length} of ${keys.length}`;
+
   if (loading) return <TablePageSkeleton title="API Keys" />;
 
   return (
     <AdminSheet>
       <DataSheet
         title="API Keys"
+        count={countLabel}
         toolbar={
           <>
-            <Button variant="outline" asChild>
+            <SheetSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Search keys"
+              aria-label="Search keys"
+            />
+            <Button variant="outline" size="sm" asChild>
               <Link href="/projects">Projects</Link>
             </Button>
-            <Button onClick={openCreate} disabled={projects.length === 0}>
+            <Button size="sm" onClick={openCreate} disabled={projects.length === 0}>
               Connect provider
             </Button>
           </>
@@ -162,7 +185,11 @@ export default function KeysPage() {
           >
             Use Connect provider to add an encrypted credential.
           </EmptyState>
-        ) : keys.length > 0 ? (
+        ) : keys.length > 0 && filtered.length === 0 ? (
+          <div className="px-4 py-16 text-center text-[13px] text-[var(--muted)]">
+            No keys match this search.
+          </div>
+        ) : filtered.length > 0 ? (
           <table className="sheet-table">
             <thead>
               <tr>
@@ -177,7 +204,7 @@ export default function KeysPage() {
               </tr>
             </thead>
             <tbody>
-              {keys.map((k) => {
+              {filtered.map((k) => {
                 const snap = snapshots[k.id];
                 const status = snap?.status || "unknown";
                 return (

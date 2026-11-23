@@ -2,15 +2,14 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { SetPageHeader } from "@/components/PageHeaderContext";
 
 export const sheetTh =
-  "sticky top-0 z-20 h-9 border-b border-[var(--border)] bg-[var(--surface-2)] px-3 text-left align-middle text-[12px] font-medium normal-case tracking-normal text-[var(--muted)] whitespace-nowrap";
+  "sticky top-0 z-20 h-9 border-b border-[var(--border)] bg-[var(--surface-2)] px-3 py-0 text-left align-middle text-[12px] font-medium normal-case tracking-normal text-[var(--muted)] whitespace-nowrap";
 
 export const sheetTd =
   "border-b border-[var(--border)] px-3 py-2 align-middle text-[13px] text-[var(--text)]";
 
-/** Full-bleed sheet host for list/data routes (Vector7 AdminSheet). */
+/** Full-bleed sheet host for list/data routes. */
 export function AdminSheet({
   children,
   className,
@@ -45,15 +44,20 @@ export function AdminPad({
   );
 }
 
-/** Full-bleed list page — title/toolbar render in the shell topbar. */
+/**
+ * Meetings / projects-style sheet: title + toolbar on the page,
+ * table body scrolls underneath.
+ */
 export function DataSheet({
   title,
+  count,
   toolbar,
   children,
   className,
   bodyClassName,
 }: {
   title?: ReactNode;
+  count?: ReactNode;
   toolbar?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -61,7 +65,23 @@ export function DataSheet({
 }) {
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      <SetPageHeader title={title} actions={toolbar} />
+      {title || toolbar ? (
+        <div className="flex shrink-0 flex-col gap-2 border-b border-[var(--border)] px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {title ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="px-1 text-[14px] font-medium text-[var(--text)]">{title}</div>
+              {count != null ? (
+                <span className="text-[12px] tabular-nums text-[var(--muted)]">{count}</span>
+              ) : null}
+            </div>
+          ) : null}
+          {toolbar ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+              {toolbar}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className={cn("min-h-0 flex-1 overflow-auto", bodyClassName)}>{children}</div>
     </div>
   );

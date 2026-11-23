@@ -1,25 +1,45 @@
 import type { ReactNode } from "react";
 import type { ChartDatum } from "@/lib/dashboardStats";
 import { fmtMoney, relativeTime, titleCase } from "@/lib/format";
-import { SetPageHeader } from "@/components/PageHeaderContext";
+import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
   const s = status || "unknown";
   return <span className={`badge ${s}`}>{s}</span>;
 }
 
-/** Registers title + CTAs in the shell topbar (no in-page chrome). */
+/** In-page heading + CTAs (dashboard / settings). */
 export function PageHeader({
   title,
   description,
   actions,
+  className,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }) {
-  return <SetPageHeader title={title} description={description} actions={actions} />;
+  return (
+    <div
+      className={cn(
+        "mb-5 flex flex-col gap-3 border-b border-[var(--border)] pb-4 sm:flex-row sm:items-end sm:justify-between",
+        className
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className="m-0 text-[20px] font-semibold tracking-[-0.4px] text-[var(--text)]">
+          {title}
+        </h1>
+        {description ? (
+          <p className="mt-1 mb-0 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+    </div>
+  );
 }
 
 export function KpiCard({
@@ -150,7 +170,7 @@ export function SvgBarChart({
                 fill="#a1a1aa"
                 fontSize="10"
               >
-                {d.label.length > 8 ? `${d.label.slice(0, 7)}â¦` : d.label}
+                {d.label.length > 8 ? `${d.label.slice(0, 7)}Ã¢ÂÂ¦` : d.label}
               </text>
             </g>
           );
@@ -217,7 +237,7 @@ export function SvgDonut({
         {data.map((d) => (
           <span key={d.label}>
             <i className="chart-swatch" style={{ background: d.color || "#f97316" }} />
-            {d.label} Â· {d.value}
+            {d.label} ÃÂ· {d.value}
           </span>
         ))}
       </div>

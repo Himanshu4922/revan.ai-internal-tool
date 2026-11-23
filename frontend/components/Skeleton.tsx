@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
 import { AdminPad, AdminSheet, DataSheet } from "@/components/DataSheet";
-import { SetPageHeader } from "@/components/PageHeaderContext";
 
 export function Skeleton({
   className = "",
@@ -13,7 +12,7 @@ export function Skeleton({
 }
 
 export function SkeletonPage({
-  title = "Loading",
+  titleWidth = "40%",
   children,
 }: {
   title?: string;
@@ -22,16 +21,17 @@ export function SkeletonPage({
 }) {
   return (
     <AdminPad>
-      <SetPageHeader
-        title={title}
-        actions={
-          <>
+      <div className="page-skeleton" aria-busy="true" aria-live="polite">
+        <div className="page-header page-header-static">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Skeleton style={{ height: 22, width: titleWidth, maxWidth: 280 }} />
+            <Skeleton style={{ height: 14, width: "min(100%, 420px)", marginTop: 10 }} />
+          </div>
+          <div className="page-actions" style={{ gap: "0.5rem" }}>
             <Skeleton style={{ height: 36, width: 120, borderRadius: 8 }} />
             <Skeleton style={{ height: 36, width: 100, borderRadius: 8 }} />
-          </>
-        }
-      />
-      <div className="page-skeleton" aria-busy="true" aria-live="polite">
+          </div>
+        </div>
         {children}
       </div>
     </AdminPad>
@@ -102,7 +102,7 @@ export function SkeletonTable({ rows = 6, cols = 5 }: { rows?: number; cols?: nu
 
 export function DashboardSkeleton() {
   return (
-    <SkeletonPage title="Overview">
+    <SkeletonPage titleWidth="30%">
       <SkeletonKpiGrid count={4} />
       <div className="split-2" style={{ marginTop: "1.15rem" }}>
         <div className="card">
@@ -139,7 +139,7 @@ export function CardsPageSkeleton() {
 
 export function SettingsSkeleton() {
   return (
-    <SkeletonPage title="Settings">
+    <SkeletonPage titleWidth="28%">
       <div className="stack">
         {[0, 1, 2].map((i) => (
           <div key={i} className="card">

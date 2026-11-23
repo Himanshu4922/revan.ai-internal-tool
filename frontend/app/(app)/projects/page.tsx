@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/widgets";
 import { AdminSheet, DataSheet } from "@/components/DataSheet";
+import { SheetSearch } from "@/components/SheetSearch";
 import { Button } from "@/components/ui/button";
 import { MemberDialog } from "@/components/dialogs/MemberDialog";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
@@ -15,6 +16,7 @@ export default function ProjectsPage() {
   const [items, setItems] = useState<ProjectWithMembers[]>([]);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [search, setSearch] = useState("");
   const [projectOpen, setProjectOpen] = useState(false);
   const [memberOpen, setMemberOpen] = useState(false);
   const [editProject, setEditProject] = useState<ProjectWithMembers | null>(null);
@@ -78,25 +80,53 @@ export default function ProjectsPage() {
     }
   }
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((p) => {
+      const members = (p.members || [])
+        .map((m) => `${m.name} ${m.email || ""} ${m.role_label || ""}`)
+        .join(" ");
+      return `${p.name} ${p.description || ""} ${members}`.toLowerCase().includes(q);
+    });
+  }, [items, search]);
+
+  const countLabel =
+    filtered.length === items.length
+      ? String(items.length)
+      : `${filtered.length} of ${items.length}`;
+
   if (loading) return <TablePageSkeleton title="Projects" />;
 
   return (
     <AdminSheet>
       <DataSheet
         title="Projects"
+        count={countLabel}
         toolbar={
-          user?.role === "admin" ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => openAddMember()}
-                disabled={items.length === 0}
-              >
-                Add member
-              </Button>
-              <Button onClick={openCreateProject}>New project</Button>
-            </>
-          ) : null
+          <>
+            <SheetSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Search projects"
+              aria-label="Search projects"
+            />
+            {user?.role === "admin" ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openAddMember()}
+                  disabled={items.length === 0}
+                >
+                  Add member
+                </Button>
+                <Button size="sm" onClick={openCreateProject}>
+                  New project
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       >
         {error ? <div className="err" style={{ margin: "0.75rem" }}>{error}</div> : null}
@@ -113,6 +143,10 @@ export default function ProjectsPage() {
           >
             Projects group API keys by product or environment ownership.
           </EmptyState>
+        ) : filtered.length === 0 ? (
+          <div className="px-4 py-16 text-center text-[13px] text-[var(--muted)]">
+            No projects match this search.
+          </div>
         ) : (
           <table className="sheet-table">
             <thead>
@@ -124,7 +158,7 @@ export default function ProjectsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((p) => {
+              {filtered.map((p) => {
                 const members = p.members || [];
                 const open = expanded === p.id;
                 return (

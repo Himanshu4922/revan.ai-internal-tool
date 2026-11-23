@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PageHeaderProvider, usePageHeader } from "@/components/PageHeaderContext";
+import { SearchPalette } from "@/components/SearchPalette";
 import { api, User } from "@/lib/api";
 
 type NavItem = {
@@ -115,8 +115,6 @@ function AppTopbar({
   navOpen: boolean;
   onMenu: () => void;
 }) {
-  const { title, description, setActionsHost } = usePageHeader();
-
   return (
     <header className="app-topbar">
       <button
@@ -128,14 +126,8 @@ function AppTopbar({
       >
         Menu
       </button>
-      <div className="app-topbar-heading">
-        <h1 className="app-topbar-title">{title || "Agni Key Monitor"}</h1>
-        {description ? <p className="app-topbar-desc">{description}</p> : null}
-      </div>
-      <div
-        className="app-topbar-actions"
-        ref={setActionsHost}
-      />
+      <SearchPalette />
+      <div className="app-topbar-spacer" aria-hidden />
       <ThemeToggle />
     </header>
   );
@@ -230,7 +222,6 @@ export function Shell({ children }: { children: ReactNode }) {
   const railCollapsed = collapsed && !hoverExpand;
 
   return (
-    <PageHeaderProvider>
     <div
       className={`app-shell${navOpen ? " nav-open" : ""}${collapsed ? " sidebar-collapsed" : ""}`}
     >
@@ -348,6 +339,5 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="main-body">{children}</div>
       </div>
     </div>
-    </PageHeaderProvider>
   );
 }
