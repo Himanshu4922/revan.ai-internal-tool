@@ -256,8 +256,8 @@ export default function DashboardPage() {
                     <p className="card-sub">{pd.project.description || "No description"}</p>
                     <p className="muted" style={{ margin: "0.35rem 0 0" }}>
                       Team:{" "}
-                      {pd.members.length
-                        ? pd.members
+                      {(pd.members || []).length
+                        ? (pd.members || [])
                             .map((m) => `${m.name}${m.role_label ? ` (${m.role_label})` : ""}`)
                             .join(", ")
                         : "none assigned"}

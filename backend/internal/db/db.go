@@ -296,7 +296,7 @@ FROM project_members WHERE project_id=$1 ORDER BY name`, projectID)
 		return nil, err
 	}
 	defer rows.Close()
-	var out []models.ProjectMember
+	out := make([]models.ProjectMember, 0)
 	for rows.Next() {
 		var m models.ProjectMember
 		if err := rows.Scan(&m.ID, &m.ProjectID, &m.Name, &m.Email, &m.Phone, &m.RoleLabel, &m.CreatedAt); err != nil {
