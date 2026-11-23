@@ -1,0 +1,7 @@
+# Optional: paste into the existing Caddyfile on the Oracle VM.
+# Point DNS for this host at the same VM; do not create a new instance.
+
+keys.internal.ravan.ai {
+	encode gzip
+	reverse_proxy 127.0.0.1:3095
+}
