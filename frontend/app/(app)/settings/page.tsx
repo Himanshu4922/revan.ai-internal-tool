@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui";
+import { AdminPad } from "@/components/DataSheet";
 import { api, User } from "@/lib/api";
 import { SettingsSkeleton } from "@/components/Skeleton";
 
@@ -29,7 +30,7 @@ export default function SettingsPage() {
   if (loading) return <SettingsSkeleton />;
 
   return (
-    <>
+    <AdminPad>
       <PageHeader
         title="Settings"
         description="Account details and how monitoring is configured for this deployment."
@@ -91,6 +92,6 @@ export default function SettingsPage() {
           </ul>
         </div>
       </div>
-    </>
+    </AdminPad>
   );
 }

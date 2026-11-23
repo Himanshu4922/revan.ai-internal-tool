@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
   EmptyState,
   Money,
-  PageHeader,
   ProviderCell,
   RelativeTime,
   StatusBadge,
 } from "@/components/ui";
+import { AdminSheet, DataSheet } from "@/components/DataSheet";
 import { api, ProjectDashboard, User } from "@/lib/api";
 import { groupByProvider } from "@/lib/dashboardStats";
 import { TablePageSkeleton } from "@/components/Skeleton";
@@ -47,40 +47,37 @@ export default function ProvidersPage() {
     return "unknown";
   }
 
-  if (loading) return <TablePageSkeleton />;
+  if (loading) return <TablePageSkeleton title="Providers" />;
 
   return (
-    <>
-      <PageHeader
+    <AdminSheet>
+      <DataSheet
         title="Providers"
-        description="Connected providers derived from your stored API keys and latest credit checks."
-        actions={
+        toolbar={
           user?.role === "admin" ? (
             <Link className="btn primary" href="/keys">
               Connect provider
             </Link>
           ) : null
         }
-      />
+      >
+        {error ? <div className="err" style={{ margin: "0.75rem" }}>{error}</div> : null}
 
-      {error ? <div className="err">{error}</div> : null}
-
-      {providers.length === 0 ? (
-        <EmptyState
-          title="No providers connected"
-          action={
-            user?.role === "admin" ? (
-              <Link className="btn primary" href="/keys">
-                Add an API key
-              </Link>
-            ) : null
-          }
-        >
-          Providers appear here once keys are attached to a project.
-        </EmptyState>
-      ) : (
-        <div className="card table-wrap">
-          <table>
+        {providers.length === 0 ? (
+          <EmptyState
+            title="No providers connected"
+            action={
+              user?.role === "admin" ? (
+                <Link className="btn primary" href="/keys">
+                  Add an API key
+                </Link>
+              ) : null
+            }
+          >
+            Providers appear here once keys are attached to a project.
+          </EmptyState>
+        ) : (
+          <table className="sheet-table">
             <thead>
               <tr>
                 <th>Provider</th>
@@ -120,8 +117,8 @@ export default function ProvidersPage() {
               })}
             </tbody>
           </table>
-        </div>
-      )}
-    </>
+        )}
+      </DataSheet>
+    </AdminSheet>
   );
 }

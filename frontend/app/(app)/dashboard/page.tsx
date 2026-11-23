@@ -24,6 +24,7 @@ import {
   projectSpendChart,
 } from "@/lib/dashboardStats";
 import { fmtMoney, fmtTime } from "@/lib/format";
+import { AdminPad } from "@/components/DataSheet";
 import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function DashboardPage() {
@@ -83,7 +84,7 @@ export default function DashboardPage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <>
+    <AdminPad>
       <PageHeader
         title="Overview"
         description="Credit status, spend, and keys across projects — live from the latest provider checks."
@@ -333,6 +334,6 @@ export default function DashboardPage() {
           </div>
         </>
       )}
-    </>
+    </AdminPad>
   );
 }

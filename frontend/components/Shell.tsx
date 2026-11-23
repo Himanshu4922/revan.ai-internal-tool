@@ -327,7 +327,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <strong style={{ fontSize: "0.95rem" }}>Agni Key Monitor</strong>
           <ThemeToggle />
         </div>
-        {children}
+        <div className="main-body">{children}</div>
       </div>
     </div>
   );

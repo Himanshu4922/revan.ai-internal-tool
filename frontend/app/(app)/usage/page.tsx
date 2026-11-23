@@ -17,6 +17,7 @@ import {
   providerSpendChart,
 } from "@/lib/dashboardStats";
 import { fmtMoney } from "@/lib/format";
+import { AdminPad } from "@/components/DataSheet";
 import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function UsagePage() {
@@ -49,7 +50,7 @@ export default function UsagePage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <>
+    <AdminPad>
       <PageHeader
         title="Usage & analytics"
         description="Current spend and balance aggregates from the latest provider snapshots."
@@ -178,6 +179,6 @@ export default function UsagePage() {
           </div>
         </>
       )}
-    </>
+    </AdminPad>
   );
 }

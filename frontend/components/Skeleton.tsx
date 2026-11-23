@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { AdminPad, AdminSheet, DataSheet } from "@/components/DataSheet";
 
 export function Skeleton({
   className = "",
@@ -18,19 +19,21 @@ export function SkeletonPage({
   children?: ReactNode;
 }) {
   return (
-    <div className="page-skeleton" aria-busy="true" aria-live="polite">
-      <div className="page-header page-header-static">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Skeleton style={{ height: 22, width: titleWidth, maxWidth: 280 }} />
-          <Skeleton style={{ height: 14, width: "min(100%, 420px)", marginTop: 10 }} />
+    <AdminPad>
+      <div className="page-skeleton" aria-busy="true" aria-live="polite">
+        <div className="page-header page-header-static">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Skeleton style={{ height: 22, width: titleWidth, maxWidth: 280 }} />
+            <Skeleton style={{ height: 14, width: "min(100%, 420px)", marginTop: 10 }} />
+          </div>
+          <div className="page-actions" style={{ gap: "0.5rem" }}>
+            <Skeleton style={{ height: 36, width: 120, borderRadius: 8 }} />
+            <Skeleton style={{ height: 36, width: 100, borderRadius: 8 }} />
+          </div>
         </div>
-        <div className="page-actions" style={{ gap: "0.5rem" }}>
-          <Skeleton style={{ height: 36, width: 120, borderRadius: 8 }} />
-          <Skeleton style={{ height: 36, width: 100, borderRadius: 8 }} />
-        </div>
+        {children}
       </div>
-      {children}
-    </div>
+    </AdminPad>
   );
 }
 
@@ -71,30 +74,28 @@ export function SkeletonCards({ count = 6, columns = 3 }: { count?: number; colu
 
 export function SkeletonTable({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div className="card table-wrap">
-      <table>
-        <thead>
-          <tr>
-            {Array.from({ length: cols }).map((_, i) => (
-              <th key={i}>
-                <Skeleton style={{ height: 12, width: `${50 + (i % 3) * 12}%` }} />
-              </th>
+    <table className="sheet-table">
+      <thead>
+        <tr>
+          {Array.from({ length: cols }).map((_, i) => (
+            <th key={i}>
+              <Skeleton style={{ height: 12, width: `${50 + (i % 3) * 12}%` }} />
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {Array.from({ length: rows }).map((_, r) => (
+          <tr key={r}>
+            {Array.from({ length: cols }).map((_, c) => (
+              <td key={c}>
+                <Skeleton style={{ height: 12, width: `${55 + ((r + c) % 4) * 10}%` }} />
+              </td>
             ))}
           </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: rows }).map((_, r) => (
-            <tr key={r}>
-              {Array.from({ length: cols }).map((_, c) => (
-                <td key={c}>
-                  <Skeleton style={{ height: 12, width: `${55 + ((r + c) % 4) * 10}%` }} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -121,20 +122,18 @@ export function DashboardSkeleton() {
   );
 }
 
-export function TablePageSkeleton() {
+export function TablePageSkeleton({ title = "Loading" }: { title?: string }) {
   return (
-    <SkeletonPage>
-      <SkeletonTable rows={7} cols={6} />
-    </SkeletonPage>
+    <AdminSheet>
+      <DataSheet title={title}>
+        <SkeletonTable rows={7} cols={6} />
+      </DataSheet>
+    </AdminSheet>
   );
 }
 
 export function CardsPageSkeleton() {
-  return (
-    <SkeletonPage>
-      <SkeletonCards count={6} columns={3} />
-    </SkeletonPage>
-  );
+  return <TablePageSkeleton title="Projects" />;
 }
 
 export function SettingsSkeleton() {

@@ -3,7 +3,8 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { EmptyState, PageHeader, ProviderCell, RelativeTime } from "@/components/ui";
+import { EmptyState, ProviderCell, RelativeTime } from "@/components/ui";
+import { AdminSheet, DataSheet } from "@/components/DataSheet";
 import { api, APIKey, CreditSnapshot, ProjectEnv, ProjectWithMembers } from "@/lib/api";
 import { PROVIDER_VALUES, providerGroups } from "@/lib/providers";
 import { TablePageSkeleton } from "@/components/Skeleton";
@@ -165,14 +166,13 @@ export default function KeysPage() {
     }
   }
 
-  if (loading) return <TablePageSkeleton />;
+  if (loading) return <TablePageSkeleton title="API Keys" />;
 
   return (
-    <>
-      <PageHeader
-        title="Encrypted credentials"
-        description="Secrets are stored encrypted and never returned to the browser — only a short hint is shown."
-        actions={
+    <AdminSheet>
+      <DataSheet
+        title="API Keys"
+        toolbar={
           <>
             <Link className="btn" href="/projects">
               Projects
@@ -192,141 +192,139 @@ export default function KeysPage() {
             </button>
           </>
         }
-      />
+      >
+        {error ? <div className="err" style={{ margin: "0.75rem" }}>{error}</div> : null}
+        {msg ? <p className="ok-msg" style={{ margin: "0.75rem" }}>{msg}</p> : null}
 
-      {error ? <div className="err">{error}</div> : null}
-      {msg ? <p className="ok-msg">{msg}</p> : null}
+        {projects.length === 0 ? (
+          <EmptyState
+            title="Create a project first"
+            action={
+              <Link className="btn primary" href="/projects">
+                Go to Projects
+              </Link>
+            }
+          >
+            Keys must belong to a project and environment before they can be added.
+          </EmptyState>
+        ) : null}
 
-      {projects.length === 0 ? (
-        <EmptyState
-          title="Create a project first"
-          action={
-            <Link className="btn primary" href="/projects">
-              Go to Projects
-            </Link>
-          }
-        >
-          Keys must belong to a project and environment before they can be added.
-        </EmptyState>
-      ) : null}
-
-      {showForm ? (
-        <form className="card" onSubmit={onSubmit} style={{ marginBottom: "1.15rem" }}>
-          <h2 className="card-title">{editId ? "Update key" : "Add key"}</h2>
-          <p className="card-sub" style={{ marginBottom: "1rem" }}>
-            Assign a provider secret to a project + env
-          </p>
-          <div className="form-grid">
-            <div className="field">
-              <label>Provider</label>
-              <select
-                value={PROVIDER_VALUES.includes(form.provider) ? form.provider : OTHER_VALUE}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setForm({
-                    ...form,
-                    provider: v === OTHER_VALUE ? "" : v,
-                  });
-                }}
-              >
-                {PROVIDER_GROUPS.map((g) => (
-                  <optgroup key={g.group} label={g.group}>
-                    {g.options.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-                <option value={OTHER_VALUE}>Other (custom)…</option>
-              </select>
-              {!PROVIDER_VALUES.includes(form.provider) ? (
-                <input
-                  style={{ marginTop: "0.5rem" }}
-                  placeholder="Custom provider id (e.g. my-vendor)"
-                  value={form.provider}
-                  onChange={(e) => setForm({ ...form, provider: e.target.value })}
+        {showForm ? (
+          <form className="sheet-panel" onSubmit={onSubmit}>
+            <h2 className="card-title">{editId ? "Update key" : "Add key"}</h2>
+            <p className="card-sub" style={{ marginBottom: "1rem" }}>
+              Assign a provider secret to a project + env
+            </p>
+            <div className="form-grid">
+              <div className="field">
+                <label>Provider</label>
+                <select
+                  value={PROVIDER_VALUES.includes(form.provider) ? form.provider : OTHER_VALUE}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm({
+                      ...form,
+                      provider: v === OTHER_VALUE ? "" : v,
+                    });
+                  }}
+                >
+                  {PROVIDER_GROUPS.map((g) => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.options.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value={OTHER_VALUE}>Other (custom)…</option>
+                </select>
+                {!PROVIDER_VALUES.includes(form.provider) ? (
+                  <input
+                    style={{ marginTop: "0.5rem" }}
+                    placeholder="Custom provider id (e.g. my-vendor)"
+                    value={form.provider}
+                    onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                    required
+                  />
+                ) : null}
+              </div>
+              <div className="field">
+                <label>Label</label>
+                <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Project</label>
+                <select
+                  value={form.project_id}
+                  onChange={(e) => setForm({ ...form, project_id: e.target.value })}
                   required
+                >
+                  <option value="">Select…</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>Env</label>
+                <select
+                  value={form.project_env}
+                  onChange={(e) => setForm({ ...form, project_env: e.target.value as ProjectEnv })}
+                >
+                  <option value="prod">prod</option>
+                  <option value="staging">staging</option>
+                  <option value="testing">testing</option>
+                  <option value="other">other</option>
+                </select>
+              </div>
+              <div className="field" style={{ gridColumn: "1 / -1" }}>
+                <label>Secret {editId ? "(leave blank to keep)" : ""}</label>
+                <input
+                  type="password"
+                  value={form.secret}
+                  onChange={(e) => setForm({ ...form, secret: e.target.value })}
+                  autoComplete="off"
+                  required={!editId}
                 />
-              ) : null}
+              </div>
+              <div className="field" style={{ gridColumn: "1 / -1" }}>
+                <label>Meta JSON (e.g. Twilio account_sid)</label>
+                <textarea
+                  rows={3}
+                  value={form.meta}
+                  onChange={(e) => setForm({ ...form, meta: e.target.value })}
+                  placeholder='{"account_sid":"AC..."}'
+                />
+              </div>
+              <div className="field" style={{ gridColumn: "1 / -1" }}>
+                <label>Notes</label>
+                <textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
             </div>
-            <div className="field">
-              <label>Label</label>
-              <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+            <div className="row-actions">
+              <button className="btn primary" type="submit" disabled={projects.length === 0}>
+                {editId ? "Save changes" : "Add key"}
+              </button>
+              <button className="btn" type="button" onClick={resetForm}>
+                Cancel
+              </button>
             </div>
-            <div className="field">
-              <label>Project</label>
-              <select
-                value={form.project_id}
-                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                required
-              >
-                <option value="">Select…</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Env</label>
-              <select
-                value={form.project_env}
-                onChange={(e) => setForm({ ...form, project_env: e.target.value as ProjectEnv })}
-              >
-                <option value="prod">prod</option>
-                <option value="staging">staging</option>
-                <option value="testing">testing</option>
-                <option value="other">other</option>
-              </select>
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Secret {editId ? "(leave blank to keep)" : ""}</label>
-              <input
-                type="password"
-                value={form.secret}
-                onChange={(e) => setForm({ ...form, secret: e.target.value })}
-                autoComplete="off"
-                required={!editId}
-              />
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Meta JSON (e.g. Twilio account_sid)</label>
-              <textarea
-                rows={3}
-                value={form.meta}
-                onChange={(e) => setForm({ ...form, meta: e.target.value })}
-                placeholder='{"account_sid":"AC..."}'
-              />
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Notes</label>
-              <textarea
-                rows={2}
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="row-actions">
-            <button className="btn primary" type="submit" disabled={projects.length === 0}>
-              {editId ? "Save changes" : "Add key"}
-            </button>
-            <button className="btn" type="button" onClick={resetForm}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : null}
+          </form>
+        ) : null}
 
-      <div className="card table-wrap">
-        {keys.length === 0 ? (
+        {keys.length === 0 && projects.length > 0 && !showForm ? (
           <EmptyState title="No keys yet">
             Use Connect provider to add an encrypted credential.
           </EmptyState>
-        ) : (
-          <table>
+        ) : keys.length > 0 ? (
+          <table className="sheet-table">
             <thead>
               <tr>
                 <th>Provider</th>
@@ -392,8 +390,8 @@ export default function KeysPage() {
               })}
             </tbody>
           </table>
-        )}
-      </div>
-    </>
+        ) : null}
+      </DataSheet>
+    </AdminSheet>
   );
 }

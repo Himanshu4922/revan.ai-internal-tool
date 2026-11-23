@@ -1,29 +1,44 @@
 import type { ReactNode } from "react";
 import type { ChartDatum } from "@/lib/dashboardStats";
 import { fmtMoney, relativeTime, titleCase } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
   const s = status || "unknown";
   return <span className={`badge ${s}`}>{s}</span>;
 }
 
+/** Vector7-style page header (non-sticky; used inside AdminPad). */
 export function PageHeader({
   title,
   description,
   actions,
+  className,
 }: {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   actions?: ReactNode;
+  className?: string;
 }) {
   return (
-    <header className="page-header">
-      <div>
-        <h1>{title}</h1>
-        {description ? <p className="lede">{description}</p> : null}
+    <div
+      className={cn(
+        "mb-5 flex flex-col gap-3 border-b border-[var(--border)] pb-4 sm:flex-row sm:items-end sm:justify-between",
+        className
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className="m-0 text-[20px] font-semibold tracking-[-0.4px] text-[var(--text)]">
+          {title}
+        </h1>
+        {description ? (
+          <p className="mt-1 mb-0 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+            {description}
+          </p>
+        ) : null}
       </div>
-      {actions ? <div className="page-actions">{actions}</div> : null}
-    </header>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+    </div>
   );
 }
 
