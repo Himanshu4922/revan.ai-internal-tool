@@ -3,10 +3,10 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shell } from "@/components/Shell";
 import { EmptyState, PageHeader, ProviderCell, RelativeTime } from "@/components/ui";
 import { api, APIKey, CreditSnapshot, ProjectEnv, ProjectWithMembers } from "@/lib/api";
 import { PROVIDER_VALUES, providerGroups } from "@/lib/providers";
+import { TablePageSkeleton } from "@/components/Skeleton";
 
 const emptyForm = {
   provider: "openai",
@@ -32,6 +32,7 @@ export default function KeysPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -57,6 +58,8 @@ export default function KeysPage() {
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load keys");
+    } finally {
+      setLoading(false);
     }
   }, [router]);
 
@@ -162,8 +165,10 @@ export default function KeysPage() {
     }
   }
 
+  if (loading) return <TablePageSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Encrypted credentials"
         description="Secrets are stored encrypted and never returned to the browser — only a short hint is shown."
@@ -389,6 +394,6 @@ export default function KeysPage() {
           </table>
         )}
       </div>
-    </Shell>
+    </>
   );
 }

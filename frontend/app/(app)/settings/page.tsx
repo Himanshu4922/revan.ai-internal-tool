@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Shell } from "@/components/Shell";
 import { PageHeader } from "@/components/ui";
 import { api, User } from "@/lib/api";
+import { SettingsSkeleton } from "@/components/Skeleton";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -16,6 +17,8 @@ export default function SettingsPage() {
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -23,8 +26,10 @@ export default function SettingsPage() {
     load();
   }, [load]);
 
+  if (loading) return <SettingsSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Settings"
         description="Account details and how monitoring is configured for this deployment."
@@ -41,11 +46,11 @@ export default function SettingsPage() {
           <div className="form-grid">
             <div className="field">
               <label>Email</label>
-              <input value={user?.email || "…"} readOnly />
+              <input value={user?.email || "—"} readOnly />
             </div>
             <div className="field">
               <label>Role</label>
-              <input value={user?.role || "…"} readOnly />
+              <input value={user?.role || "—"} readOnly />
             </div>
           </div>
           <p className="muted" style={{ margin: 0 }}>
@@ -86,6 +91,6 @@ export default function SettingsPage() {
           </ul>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Shell } from "@/components/Shell";
 import {
   EmptyState,
   KpiCard,
@@ -25,6 +24,7 @@ import {
   projectSpendChart,
 } from "@/lib/dashboardStats";
 import { fmtMoney, fmtTime } from "@/lib/format";
+import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<ProjectDashboard[]>([]);
@@ -80,8 +80,10 @@ export default function DashboardPage() {
   const keyChart = useMemo(() => providerKeyChart(byProvider), [byProvider]);
   const projectChart = useMemo(() => projectSpendChart(byProject), [byProject]);
 
+  if (loading) return <DashboardSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Overview"
         description="Credit status, spend, and keys across projects — live from the latest provider checks."
@@ -116,9 +118,7 @@ export default function DashboardPage() {
 
       {error ? <div className="err">{error}</div> : null}
 
-      {loading ? (
-        <div className="muted">Loading dashboard…</div>
-      ) : projects.length === 0 ? (
+      {projects.length === 0 ? (
         <EmptyState
           title="No projects yet"
           action={
@@ -333,6 +333,6 @@ export default function DashboardPage() {
           </div>
         </>
       )}
-    </Shell>
+    </>
   );
 }

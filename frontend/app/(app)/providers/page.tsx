@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Shell } from "@/components/Shell";
 import {
   EmptyState,
   Money,
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui";
 import { api, ProjectDashboard, User } from "@/lib/api";
 import { groupByProvider } from "@/lib/dashboardStats";
+import { TablePageSkeleton } from "@/components/Skeleton";
 
 export default function ProvidersPage() {
   const [projects, setProjects] = useState<ProjectDashboard[]>([]);
@@ -47,8 +47,10 @@ export default function ProvidersPage() {
     return "unknown";
   }
 
+  if (loading) return <TablePageSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Providers"
         description="Connected providers derived from your stored API keys and latest credit checks."
@@ -63,9 +65,7 @@ export default function ProvidersPage() {
 
       {error ? <div className="err">{error}</div> : null}
 
-      {loading ? (
-        <div className="muted">Loading providers…</div>
-      ) : providers.length === 0 ? (
+      {providers.length === 0 ? (
         <EmptyState
           title="No providers connected"
           action={
@@ -122,6 +122,6 @@ export default function ProvidersPage() {
           </table>
         </div>
       )}
-    </Shell>
+    </>
   );
 }

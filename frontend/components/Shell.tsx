@@ -155,7 +155,40 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    return <div className="shell-loading">Loading…</div>;
+    return (
+      <div className="app-shell shell-boot">
+        <aside className="sidebar" aria-hidden>
+          <div className="sidebar-aura" />
+          <div className="sidebar-brand">
+            <span className="sidebar-brand-mark">AK</span>
+            <div className="sidebar-brand-copy">
+              <div className="sidebar-brand-text">Agni Key Monitor</div>
+              <span className="sidebar-brand-sub">Loading workspace…</span>
+            </div>
+          </div>
+          <nav className="sidebar-nav">
+            <div className="sidebar-group">
+              <ul>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <li key={i}>
+                    <div className="sidebar-link" style={{ pointerEvents: "none" }}>
+                      <span className="sidebar-link-bar" />
+                      <span className="skeleton" style={{ width: 16, height: 16, borderRadius: 4 }} />
+                      <span className="skeleton" style={{ height: 12, width: `${48 + i * 8}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        </aside>
+        <div className="main">
+          <div className="shell-loading" style={{ minHeight: "40vh" }}>
+            Preparing workspace…
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const initials = (user.email || "U").slice(0, 2).toUpperCase();

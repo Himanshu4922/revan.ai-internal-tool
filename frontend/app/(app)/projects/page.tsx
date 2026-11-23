@@ -2,9 +2,9 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Shell } from "@/components/Shell";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { api, ProjectMember, ProjectWithMembers, User } from "@/lib/api";
+import { CardsPageSkeleton } from "@/components/Skeleton";
 
 export default function ProjectsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -15,6 +15,7 @@ export default function ProjectsPage() {
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [memberForm, setMemberForm] = useState({
     projectId: "",
     name: "",
@@ -32,6 +33,8 @@ export default function ProjectsPage() {
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -107,8 +110,10 @@ export default function ProjectsPage() {
     }
   }
 
+  if (loading) return <CardsPageSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Projects"
         description="Organize keys by project, assign a team, and attribute credit alerts."
@@ -319,6 +324,6 @@ export default function ProjectsPage() {
           ))}
         </div>
       )}
-    </Shell>
+    </>
   );
 }

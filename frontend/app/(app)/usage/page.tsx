@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Shell } from "@/components/Shell";
 import {
   EmptyState,
   KpiCard,
@@ -18,6 +17,7 @@ import {
   providerSpendChart,
 } from "@/lib/dashboardStats";
 import { fmtMoney } from "@/lib/format";
+import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function UsagePage() {
   const [projects, setProjects] = useState<ProjectDashboard[]>([]);
@@ -46,8 +46,10 @@ export default function UsagePage() {
   const spendByProvider = useMemo(() => providerSpendChart(byProvider), [byProvider]);
   const spendByProject = useMemo(() => projectSpendChart(byProject), [byProject]);
 
+  if (loading) return <DashboardSkeleton />;
+
   return (
-    <Shell>
+    <>
       <PageHeader
         title="Usage & analytics"
         description="Current spend and balance aggregates from the latest provider snapshots."
@@ -55,9 +57,7 @@ export default function UsagePage() {
 
       {error ? <div className="err">{error}</div> : null}
 
-      {loading ? (
-        <div className="muted">Loading usage…</div>
-      ) : totals.keyCount === 0 ? (
+      {totals.keyCount === 0 ? (
         <EmptyState title="No usage data yet">
           Add keys and run a credit check to populate spend and balance figures.
         </EmptyState>
@@ -178,6 +178,6 @@ export default function UsagePage() {
           </div>
         </>
       )}
-    </Shell>
+    </>
   );
 }
