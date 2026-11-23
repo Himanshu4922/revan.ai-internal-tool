@@ -278,11 +278,6 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-footer-tools">
-            <ThemeToggle />
-            <span className="sidebar-theme-label">Theme</span>
-          </div>
-
           <div className="sidebar-user">
             <button
               type="button"
@@ -314,9 +309,9 @@ export function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="main">
-        <div className="mobile-bar">
+        <header className="app-topbar">
           <button
-            className="btn"
+            className="btn app-topbar-menu"
             type="button"
             aria-expanded={navOpen}
             aria-controls="primary-nav"
@@ -324,9 +319,10 @@ export function Shell({ children }: { children: ReactNode }) {
           >
             Menu
           </button>
-          <strong style={{ fontSize: "0.95rem" }}>Agni Key Monitor</strong>
+          <strong className="app-topbar-title">Agni Key Monitor</strong>
+          <div className="app-topbar-spacer" aria-hidden />
           <ThemeToggle />
-        </div>
+        </header>
         <div className="main-body">{children}</div>
       </div>
     </div>
