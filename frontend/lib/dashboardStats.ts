@@ -221,7 +221,7 @@ export function attentionRows(projects: ProjectDashboard[]): FlatRow[] {
 
 export type ChartDatum = { label: string; value: number; color?: string };
 
-const CHART_COLORS = ["#3b82f6", "#22c55e", "#eab308", "#a855f7", "#f43f5e", "#06b6d4", "#f97316", "#84cc16"];
+const CHART_COLORS = ["#f97316", "#fb923c", "#22c55e", "#eab308", "#a855f7", "#f43f5e", "#06b6d4", "#84cc16"];
 
 export function providerSpendChart(stats: ProviderStats[]): ChartDatum[] {
   return stats

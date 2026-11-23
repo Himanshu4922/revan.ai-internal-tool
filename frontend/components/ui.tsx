@@ -142,7 +142,7 @@ export function SvgBarChart({
                 width={barW}
                 height={Math.max(h, 2)}
                 rx={4}
-                fill={d.color || "#3b82f6"}
+                fill={d.color || "#f97316"}
               >
                 <title>
                   {d.label}: {d.value}
@@ -164,7 +164,7 @@ export function SvgBarChart({
       <div className="chart-legend">
         {data.map((d) => (
           <span key={d.label}>
-            <i className="chart-swatch" style={{ background: d.color || "#3b82f6" }} />
+            <i className="chart-swatch" style={{ background: d.color || "#f97316" }} />
             {d.label}: {d.value.toLocaleString(undefined, { maximumFractionDigits: 4 })}
           </span>
         ))}
@@ -203,7 +203,7 @@ export function SvgDonut({
               cy={cy}
               r={r}
               fill="none"
-              stroke={d.color || "#3b82f6"}
+              stroke={d.color || "#f97316"}
               strokeWidth={14}
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}
@@ -221,7 +221,7 @@ export function SvgDonut({
       <div className="chart-legend" style={{ marginTop: 0, flexDirection: "column", gap: "0.4rem" }}>
         {data.map((d) => (
           <span key={d.label}>
-            <i className="chart-swatch" style={{ background: d.color || "#3b82f6" }} />
+            <i className="chart-swatch" style={{ background: d.color || "#f97316" }} />
             {d.label} · {d.value}
           </span>
         ))}
