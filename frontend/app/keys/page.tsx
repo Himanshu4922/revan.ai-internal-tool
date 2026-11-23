@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
-import { api, APIKey, ProjectEnv, ProjectWithMembers } from "@/lib/api";
+import { EmptyState, PageHeader, ProviderCell, RelativeTime } from "@/components/ui";
+import { api, APIKey, CreditSnapshot, ProjectEnv, ProjectWithMembers } from "@/lib/api";
 
 const emptyForm = {
   provider: "openai",
@@ -15,14 +17,32 @@ const emptyForm = {
   notes: "",
 };
 
+const PROVIDERS = [
+  "openai",
+  "anthropic",
+  "twilio",
+  "plivo",
+  "telnyx",
+  "stripe",
+  "sendgrid",
+  "gemini",
+  "pinecone",
+  "livekit",
+  "soniox",
+  "sarvam",
+];
+
 export default function KeysPage() {
   const router = useRouter();
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [projects, setProjects] = useState<ProjectWithMembers[]>([]);
+  const [snapshots, setSnapshots] = useState<Record<string, CreditSnapshot | undefined>>({});
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -31,9 +51,20 @@ export default function KeysPage() {
         router.replace("/dashboard");
         return;
       }
-      const [keysRes, projRes] = await Promise.all([api.listKeys(), api.listProjects()]);
+      const [keysRes, projRes, dash] = await Promise.all([
+        api.listKeys(),
+        api.listProjects(),
+        api.dashboard(),
+      ]);
       setKeys(keysRes.items || []);
       setProjects(projRes.items || []);
+      const snap: Record<string, CreditSnapshot | undefined> = {};
+      for (const pd of dash.projects || []) {
+        for (const item of pd.items || []) {
+          snap[item.key.id] = item.snapshot;
+        }
+      }
+      setSnapshots(snap);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load keys");
@@ -55,12 +86,14 @@ export default function KeysPage() {
       meta: k.meta ? JSON.stringify(k.meta, null, 2) : "",
       notes: k.notes || "",
     });
+    setShowForm(true);
     setMsg("");
   }
 
   function resetForm() {
     setEditId(null);
     setForm(emptyForm);
+    setShowForm(false);
   }
 
   async function onSubmit(e: FormEvent) {
@@ -123,159 +156,230 @@ export default function KeysPage() {
     try {
       await api.checkKey(id);
       setMsg("Check complete — see Dashboard");
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Check failed");
     }
   }
 
+  async function copyHint(hint: string, id: string) {
+    const text = `…${hint}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      setError("Could not copy to clipboard");
+    }
+  }
+
   return (
     <Shell>
-      <div className="toolbar">
-        <div>
-          <h1 style={{ margin: 0, fontSize: "1.25rem" }}>API keys</h1>
-          <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-            Each key belongs to a project + env (prod / staging / testing / other)
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Encrypted credentials"
+        description="Secrets are stored encrypted and never returned to the browser — only a short hint is shown."
+        actions={
+          <>
+            <Link className="btn" href="/projects">
+              Projects
+            </Link>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => {
+                setEditId(null);
+                setForm(emptyForm);
+                setShowForm(true);
+                setMsg("");
+              }}
+              disabled={projects.length === 0}
+            >
+              Connect provider
+            </button>
+          </>
+        }
+      />
 
       {error ? <div className="err">{error}</div> : null}
-      {msg ? <p className="muted">{msg}</p> : null}
+      {msg ? <p className="ok-msg">{msg}</p> : null}
 
       {projects.length === 0 ? (
-        <div className="panel muted" style={{ marginBottom: "1rem" }}>
-          No projects yet. Create one on the <a href="/projects">Projects</a> page before adding keys.
-        </div>
+        <EmptyState
+          title="Create a project first"
+          action={
+            <Link className="btn primary" href="/projects">
+              Go to Projects
+            </Link>
+          }
+        >
+          Keys must belong to a project and environment before they can be added.
+        </EmptyState>
       ) : null}
 
-      <form className="panel" onSubmit={onSubmit} style={{ marginBottom: "1.25rem" }}>
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>
-          {editId ? "Update key" : "Add key"}
-        </h2>
-        <div className="form-grid">
-          <div className="field">
-            <label>Provider</label>
-            <input
-              list="providers"
-              value={form.provider}
-              onChange={(e) => setForm({ ...form, provider: e.target.value })}
-              required
-            />
-            <datalist id="providers">
-              {["openai", "anthropic", "twilio", "plivo", "telnyx", "stripe", "sendgrid", "gemini", "pinecone", "livekit", "soniox", "sarvam"].map(
-                (p) => (
+      {showForm ? (
+        <form className="card" onSubmit={onSubmit} style={{ marginBottom: "1.15rem" }}>
+          <h2 className="card-title">{editId ? "Update key" : "Add key"}</h2>
+          <p className="card-sub" style={{ marginBottom: "1rem" }}>
+            Assign a provider secret to a project + env
+          </p>
+          <div className="form-grid">
+            <div className="field">
+              <label>Provider</label>
+              <input
+                list="providers"
+                value={form.provider}
+                onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                required
+              />
+              <datalist id="providers">
+                {PROVIDERS.map((p) => (
                   <option key={p} value={p} />
-                )
-              )}
-            </datalist>
+                ))}
+              </datalist>
+            </div>
+            <div className="field">
+              <label>Label</label>
+              <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>Project</label>
+              <select
+                value={form.project_id}
+                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
+                required
+              >
+                <option value="">Select…</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Env</label>
+              <select
+                value={form.project_env}
+                onChange={(e) => setForm({ ...form, project_env: e.target.value as ProjectEnv })}
+              >
+                <option value="prod">prod</option>
+                <option value="staging">staging</option>
+                <option value="testing">testing</option>
+                <option value="other">other</option>
+              </select>
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Secret {editId ? "(leave blank to keep)" : ""}</label>
+              <input
+                type="password"
+                value={form.secret}
+                onChange={(e) => setForm({ ...form, secret: e.target.value })}
+                autoComplete="off"
+                required={!editId}
+              />
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Meta JSON (e.g. Twilio account_sid)</label>
+              <textarea
+                rows={3}
+                value={form.meta}
+                onChange={(e) => setForm({ ...form, meta: e.target.value })}
+                placeholder='{"account_sid":"AC..."}'
+              />
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Notes</label>
+              <textarea
+                rows={2}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+            </div>
           </div>
-          <div className="field">
-            <label>Label</label>
-            <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Project</label>
-            <select
-              value={form.project_id}
-              onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-              required
-            >
-              <option value="">Select…</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Env (under that project)</label>
-            <select
-              value={form.project_env}
-              onChange={(e) => setForm({ ...form, project_env: e.target.value as ProjectEnv })}
-            >
-              <option value="prod">prod</option>
-              <option value="staging">staging</option>
-              <option value="testing">testing</option>
-              <option value="other">other</option>
-            </select>
-          </div>
-          <div className="field" style={{ gridColumn: "1 / -1" }}>
-            <label>Secret {editId ? "(leave blank to keep)" : ""}</label>
-            <input
-              type="password"
-              value={form.secret}
-              onChange={(e) => setForm({ ...form, secret: e.target.value })}
-              autoComplete="off"
-              required={!editId}
-            />
-          </div>
-          <div className="field" style={{ gridColumn: "1 / -1" }}>
-            <label>Meta JSON (e.g. Twilio account_sid)</label>
-            <textarea
-              rows={3}
-              value={form.meta}
-              onChange={(e) => setForm({ ...form, meta: e.target.value })}
-              placeholder='{"account_sid":"AC..."}'
-            />
-          </div>
-          <div className="field" style={{ gridColumn: "1 / -1" }}>
-            <label>Notes</label>
-            <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-          </div>
-        </div>
-        <div className="row-actions">
-          <button className="btn primary" type="submit" disabled={projects.length === 0}>
-            {editId ? "Save changes" : "Add key"}
-          </button>
-          {editId ? (
+          <div className="row-actions">
+            <button className="btn primary" type="submit" disabled={projects.length === 0}>
+              {editId ? "Save changes" : "Add key"}
+            </button>
             <button className="btn" type="button" onClick={resetForm}>
               Cancel
             </button>
-          ) : null}
-        </div>
-      </form>
+          </div>
+        </form>
+      ) : null}
 
-      <div className="panel table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Provider</th>
-              <th>Project</th>
-              <th>Env</th>
-              <th>Hint</th>
-              <th>Notes</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {keys.map((k) => (
-              <tr key={k.id}>
-                <td>
-                  <div>{k.provider}</div>
-                  <div className="muted">{k.label}</div>
-                </td>
-                <td>{k.project_name}</td>
-                <td>{k.project_env}</td>
-                <td className="mono">…{k.key_hint}</td>
-                <td className="muted">{k.notes || "—"}</td>
-                <td>
-                  <div className="row-actions">
-                    <button className="btn" type="button" onClick={() => startEdit(k)}>
-                      Edit
-                    </button>
-                    <button className="btn" type="button" onClick={() => check(k.id)}>
-                      Check
-                    </button>
-                    <button className="btn danger" type="button" onClick={() => remove(k.id)}>
-                      Delete
-                    </button>
-                  </div>
-                </td>
+      <div className="card table-wrap">
+        {keys.length === 0 ? (
+          <EmptyState title="No keys yet">
+            Use Connect provider to add an encrypted credential.
+          </EmptyState>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Project</th>
+                <th>Env</th>
+                <th>Key hint</th>
+                <th>Status</th>
+                <th>Last sync</th>
+                <th>Created</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {keys.map((k) => {
+                const snap = snapshots[k.id];
+                const status = snap?.status || "unknown";
+                return (
+                  <tr key={k.id}>
+                    <td>
+                      <ProviderCell provider={k.provider} subtitle={k.label || undefined} />
+                    </td>
+                    <td>{k.project_name}</td>
+                    <td>
+                      <span className="badge env">{k.project_env}</span>
+                    </td>
+                    <td>
+                      <span className="hint-copy">
+                        <span className="mono">…{k.key_hint}</span>
+                        <button
+                          className="btn sm ghost"
+                          type="button"
+                          onClick={() => copyHint(k.key_hint, k.id)}
+                          aria-label="Copy key hint"
+                        >
+                          {copied === k.id ? "Copied" : "Copy"}
+                        </button>
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${status}`}>{status}</span>
+                    </td>
+                    <td>
+                      <RelativeTime iso={snap?.checked_at} />
+                    </td>
+                    <td>
+                      <RelativeTime iso={k.created_at} />
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="btn sm" type="button" onClick={() => startEdit(k)}>
+                          Edit
+                        </button>
+                        <button className="btn sm" type="button" onClick={() => check(k.id)}>
+                          Check
+                        </button>
+                        <button className="btn sm danger" type="button" onClick={() => remove(k.id)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </Shell>
   );

@@ -12,5 +12,5 @@ export default function Home() {
       .then(() => router.replace("/dashboard"))
       .catch(() => router.replace("/login"));
   }, [router]);
-  return <div className="shell muted">Loading…</div>;
+  return <div className="shell-loading">Loading…</div>;
 }

@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Shell } from "@/components/Shell";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { api, ProjectMember, ProjectWithMembers, User } from "@/lib/api";
 
 export default function ProjectsPage() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<ProjectWithMembers[]>([]);
   const [error, setError] = useState("");
@@ -14,6 +14,7 @@ export default function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const [showProjectForm, setShowProjectForm] = useState(false);
   const [memberForm, setMemberForm] = useState({
     projectId: "",
     name: "",
@@ -53,6 +54,7 @@ export default function ProjectsPage() {
       setName("");
       setDescription("");
       setEditId(null);
+      setShowProjectForm(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -63,6 +65,7 @@ export default function ProjectsPage() {
     setEditId(p.id);
     setName(p.name);
     setDescription(p.description || "");
+    setShowProjectForm(true);
     setMsg("");
   }
 
@@ -106,174 +109,216 @@ export default function ProjectsPage() {
 
   return (
     <Shell>
-      <div className="toolbar">
-        <div>
-          <h1 style={{ margin: 0, fontSize: "1.25rem" }}>Projects</h1>
-          <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-            Projects own envs/keys and have assigned team members (shown on alerts)
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Projects"
+        description="Organize keys by project, assign a team, and attribute credit alerts."
+        actions={
+          user?.role === "admin" ? (
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => {
+                setEditId(null);
+                setName("");
+                setDescription("");
+                setShowProjectForm(true);
+              }}
+            >
+              New project
+            </button>
+          ) : null
+        }
+      />
 
       {error ? <div className="err">{error}</div> : null}
-      {msg ? <p className="muted">{msg}</p> : null}
+      {msg ? <p className="ok-msg">{msg}</p> : null}
 
-      {user?.role === "admin" ? (
-        <>
-          <form className="panel" onSubmit={saveProject} style={{ marginBottom: "1.25rem" }}>
-            <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>
-              {editId ? "Update project" : "Add project"}
-            </h2>
-            <div className="form-grid">
-              <div className="field">
-                <label>Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Agni Calling" />
-              </div>
-              <div className="field">
-                <label>Description</label>
-                <input value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
+      {user?.role === "admin" && showProjectForm ? (
+        <form className="card" onSubmit={saveProject} style={{ marginBottom: "1.15rem" }}>
+          <h2 className="card-title">{editId ? "Update project" : "Add project"}</h2>
+          <div className="form-grid" style={{ marginTop: "0.85rem" }}>
+            <div className="field">
+              <label>Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="e.g. Agni Calling"
+              />
             </div>
-            <div className="row-actions">
-              <button className="btn primary" type="submit">
-                {editId ? "Save" : "Create"}
-              </button>
-              {editId ? (
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => {
-                    setEditId(null);
-                    setName("");
-                    setDescription("");
-                  }}
-                >
-                  Cancel
-                </button>
-              ) : null}
+            <div className="field">
+              <label>Description</label>
+              <input value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
-          </form>
-
-          <form className="panel" onSubmit={addMember} style={{ marginBottom: "1.25rem" }}>
-            <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Add team member</h2>
-            <div className="form-grid">
-              <div className="field">
-                <label>Project</label>
-                <select
-                  value={memberForm.projectId}
-                  onChange={(e) => setMemberForm({ ...memberForm, projectId: e.target.value })}
-                  required
-                >
-                  <option value="">Select…</option>
-                  {items.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label>Name</label>
-                <input
-                  value={memberForm.name}
-                  onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="field">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={memberForm.email}
-                  onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
-                />
-              </div>
-              <div className="field">
-                <label>Phone</label>
-                <input
-                  value={memberForm.phone}
-                  onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
-                />
-              </div>
-              <div className="field">
-                <label>Role on team</label>
-                <input
-                  value={memberForm.role_label}
-                  onChange={(e) => setMemberForm({ ...memberForm, role_label: e.target.value })}
-                  placeholder="e.g. owner, on-call"
-                />
-              </div>
-            </div>
+          </div>
+          <div className="row-actions">
             <button className="btn primary" type="submit">
-              Add member
+              {editId ? "Save" : "Create"}
             </button>
-          </form>
-        </>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => {
+                setEditId(null);
+                setName("");
+                setDescription("");
+                setShowProjectForm(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       ) : null}
 
-      {items.map((p) => (
-        <div key={p.id} className="panel" style={{ marginBottom: "1rem" }}>
-          <div className="toolbar">
-            <div>
-              <h2 style={{ margin: 0, fontSize: "1.05rem" }}>{p.name}</h2>
-              <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-                {p.description || "No description"}
-              </p>
+      {user?.role === "admin" && items.length > 0 ? (
+        <form className="card" onSubmit={addMember} style={{ marginBottom: "1.15rem" }}>
+          <h2 className="card-title">Add team member</h2>
+          <p className="card-sub" style={{ marginBottom: "0.85rem" }}>
+            Shown on low-credit alerts for the project
+          </p>
+          <div className="form-grid">
+            <div className="field">
+              <label>Project</label>
+              <select
+                value={memberForm.projectId}
+                onChange={(e) => setMemberForm({ ...memberForm, projectId: e.target.value })}
+                required
+              >
+                <option value="">Select…</option>
+                {items.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            {user?.role === "admin" ? (
-              <div className="row-actions">
-                <button className="btn" type="button" onClick={() => startEdit(p)}>
-                  Edit
-                </button>
-                <button className="btn" type="button" onClick={() => router.push(`/dashboard`)}>
-                  View dashboard
-                </button>
-                <button className="btn danger" type="button" onClick={() => removeProject(p.id)}>
-                  Delete
-                </button>
+            <div className="field">
+              <label>Name</label>
+              <input
+                value={memberForm.name}
+                onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={memberForm.email}
+                onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Phone</label>
+              <input
+                value={memberForm.phone}
+                onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Role on team</label>
+              <input
+                value={memberForm.role_label}
+                onChange={(e) => setMemberForm({ ...memberForm, role_label: e.target.value })}
+                placeholder="e.g. owner, on-call"
+              />
+            </div>
+          </div>
+          <button className="btn primary" type="submit">
+            Add member
+          </button>
+        </form>
+      ) : null}
+
+      {items.length === 0 ? (
+        <EmptyState
+          title="No projects yet"
+          action={
+            user?.role === "admin" ? (
+              <button
+                className="btn primary"
+                type="button"
+                onClick={() => setShowProjectForm(true)}
+              >
+                Create project
+              </button>
+            ) : null
+          }
+        >
+          Projects group API keys by product or environment ownership.
+        </EmptyState>
+      ) : (
+        <div className="stack">
+          {items.map((p) => (
+            <div key={p.id} className="card">
+              <div className="toolbar">
+                <div>
+                  <h2 className="card-title">{p.name}</h2>
+                  <p className="card-sub">{p.description || "No description"}</p>
+                </div>
+                <div className="row-actions">
+                  <Link className="btn sm" href="/dashboard">
+                    View dashboard
+                  </Link>
+                  {user?.role === "admin" ? (
+                    <>
+                      <button className="btn sm" type="button" onClick={() => startEdit(p)}>
+                        Edit
+                      </button>
+                      <button className="btn sm danger" type="button" onClick={() => removeProject(p.id)}>
+                        Delete
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
-            ) : null}
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Team member</th>
-                  <th>Role</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {(p.members || []).length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="muted">
-                      No team members yet.
-                    </td>
-                  </tr>
-                ) : (
-                  (p.members || []).map((m) => (
-                    <tr key={m.id}>
-                      <td>{m.name}</td>
-                      <td className="muted">{m.role_label || "—"}</td>
-                      <td className="muted">{m.email || "—"}</td>
-                      <td className="muted">{m.phone || "—"}</td>
-                      <td>
-                        {user?.role === "admin" ? (
-                          <button className="btn danger" type="button" onClick={() => removeMember(p.id, m)}>
-                            Remove
-                          </button>
-                        ) : null}
-                      </td>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Team member</th>
+                      <th>Role</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th />
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {(p.members || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="muted">
+                          No team members yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      (p.members || []).map((m) => (
+                        <tr key={m.id}>
+                          <td>{m.name}</td>
+                          <td className="muted">{m.role_label || "—"}</td>
+                          <td className="muted">{m.email || "—"}</td>
+                          <td className="muted">{m.phone || "—"}</td>
+                          <td>
+                            {user?.role === "admin" ? (
+                              <button
+                                className="btn sm danger"
+                                type="button"
+                                onClick={() => removeMember(p.id, m)}
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </Shell>
   );
 }

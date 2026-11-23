@@ -27,9 +27,16 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
-      <form className="panel login-panel" onSubmit={onSubmit}>
-        <h1>Agni Key Monitor</h1>
-        <p>Internal credit status for third-party API keys.</p>
+      <form className="card login-panel" onSubmit={onSubmit}>
+        <div className="login-brand">
+          <span className="sidebar-brand-mark">AK</span>
+          <div>
+            <div className="sidebar-brand-text">Agni Key Monitor</div>
+            <span className="sidebar-brand-sub">Internal credit dashboard</span>
+          </div>
+        </div>
+        <h1>Sign in</h1>
+        <p>Monitor API providers, keys, and credit balances in one place.</p>
         {error ? <div className="err">{error}</div> : null}
         <div className="field">
           <label htmlFor="email">Email</label>
@@ -53,7 +60,7 @@ export default function LoginPage() {
             required
           />
         </div>
-        <button className="btn primary" type="submit" disabled={loading}>
+        <button className="btn primary" type="submit" disabled={loading} style={{ width: "100%" }}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
