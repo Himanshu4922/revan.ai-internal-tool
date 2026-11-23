@@ -177,6 +177,34 @@ func (s *Store) EnsureUser(ctx context.Context, email, password string, role mod
 	return err
 }
 
+// CreateUser inserts a new user. Returns pgx unique-violation wrapped as fmt error
+// with message "email already registered" when the email is taken.
+func (s *Store) CreateUser(ctx context.Context, email, password string, role models.Role) (*models.User, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	if email == "" || password == "" {
+		return nil, fmt.Errorf("email and password are required")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	var u models.User
+	var roleStr string
+	err = s.Pool.QueryRow(ctx,
+		`INSERT INTO users (email, password_hash, role) VALUES ($1,$2,$3)
+		 RETURNING id, email, password_hash, role, created_at`,
+		email, string(hash), string(role),
+	).Scan(&u.ID, &u.Email, &u.PasswordHash, &roleStr, &u.CreatedAt)
+	if err != nil {
+		if strings.Contains(err.Error(), "users_email_key") || strings.Contains(err.Error(), "duplicate key") {
+			return nil, fmt.Errorf("email already registered")
+		}
+		return nil, err
+	}
+	u.Role = models.Role(roleStr)
+	return &u, nil
+}
+
 func (s *Store) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var u models.User
 	var role string

@@ -69,6 +69,7 @@ func main() {
 
 	r.GET("/api/health", api.Health)
 	r.POST("/api/auth/login", api.Login)
+	r.POST("/api/auth/signup", api.Signup)
 	r.POST("/api/auth/logout", api.Logout)
 
 	authed := r.Group("/api", authSvc.Middleware(models.RoleAdmin, models.RoleViewer))

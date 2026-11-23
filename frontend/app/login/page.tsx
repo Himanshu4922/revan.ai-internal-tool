@@ -1,7 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuthShell } from "@/components/AuthShell";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
@@ -10,6 +12,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api
+      .me()
+      .then(() => router.replace("/dashboard"))
+      .catch(() => undefined);
+  }, [router]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,17 +35,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-wrap">
-      <form className="card login-panel" onSubmit={onSubmit}>
-        <div className="login-brand">
-          <span className="sidebar-brand-mark">AK</span>
-          <div>
-            <div className="sidebar-brand-text">Agni Key Monitor</div>
-            <span className="sidebar-brand-sub">Internal credit dashboard</span>
-          </div>
-        </div>
-        <h1>Sign in</h1>
-        <p>Monitor API providers, keys, and credit balances in one place.</p>
+    <AuthShell
+      title="Welcome back"
+      footer={
+        <>
+          <p>
+            Don&apos;t have an account? <Link href="/signup">Start free</Link>
+          </p>
+          <p>
+            <Link href="/" className="auth-back">
+              ← Back to home
+            </Link>
+          </p>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="auth-form">
         {error ? <div className="err">{error}</div> : null}
         <div className="field">
           <label htmlFor="email">Email</label>
@@ -44,26 +58,30 @@ export default function LoginPage() {
             id="email"
             type="email"
             autoComplete="username"
+            placeholder="you@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
         <div className="field">
-          <label htmlFor="password">Password</label>
+          <div className="field-label-row">
+            <label htmlFor="password">Password</label>
+          </div>
           <input
             id="password"
             type="password"
             autoComplete="current-password"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
-        <button className="btn primary" type="submit" disabled={loading} style={{ width: "100%" }}>
+        <button className="btn primary auth-submit" type="submit" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
-    </div>
+    </AuthShell>
   );
 }

@@ -49,8 +49,9 @@ export default function SettingsPage() {
             </div>
           </div>
           <p className="muted" style={{ margin: 0 }}>
-            User accounts are seeded from server environment variables. There is no self-serve
-            invite or password-change UI in this build.
+            New accounts can sign up at <code className="mono">/signup</code> (admin role). Seeded
+            admin/viewer users from server env still work. Password reset is not available in this
+            build.
           </p>
         </div>
 
