@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PageHeaderProvider, usePageHeader } from "@/components/PageHeaderContext";
 import { api, User } from "@/lib/api";
 
 type NavItem = {
@@ -107,6 +108,39 @@ function CollapseIcon({ collapsed }: { collapsed: boolean }) {
   );
 }
 
+function AppTopbar({
+  navOpen,
+  onMenu,
+}: {
+  navOpen: boolean;
+  onMenu: () => void;
+}) {
+  const { title, description, setActionsHost } = usePageHeader();
+
+  return (
+    <header className="app-topbar">
+      <button
+        className="btn app-topbar-menu"
+        type="button"
+        aria-expanded={navOpen}
+        aria-controls="primary-nav"
+        onClick={onMenu}
+      >
+        Menu
+      </button>
+      <div className="app-topbar-heading">
+        <h1 className="app-topbar-title">{title || "Agni Key Monitor"}</h1>
+        {description ? <p className="app-topbar-desc">{description}</p> : null}
+      </div>
+      <div
+        className="app-topbar-actions"
+        ref={setActionsHost}
+      />
+      <ThemeToggle />
+    </header>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -196,6 +230,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const railCollapsed = collapsed && !hoverExpand;
 
   return (
+    <PageHeaderProvider>
     <div
       className={`app-shell${navOpen ? " nav-open" : ""}${collapsed ? " sidebar-collapsed" : ""}`}
     >
@@ -309,22 +344,10 @@ export function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="main">
-        <header className="app-topbar">
-          <button
-            className="btn app-topbar-menu"
-            type="button"
-            aria-expanded={navOpen}
-            aria-controls="primary-nav"
-            onClick={() => setNavOpen((o) => !o)}
-          >
-            Menu
-          </button>
-          <strong className="app-topbar-title">Agni Key Monitor</strong>
-          <div className="app-topbar-spacer" aria-hidden />
-          <ThemeToggle />
-        </header>
+        <AppTopbar navOpen={navOpen} onMenu={() => setNavOpen((o) => !o)} />
         <div className="main-body">{children}</div>
       </div>
     </div>
+    </PageHeaderProvider>
   );
 }

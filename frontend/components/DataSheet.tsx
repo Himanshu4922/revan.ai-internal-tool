@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { SetPageHeader } from "@/components/PageHeaderContext";
 
 export const sheetTh =
   "sticky top-0 z-20 h-9 border-b border-[var(--border)] bg-[var(--surface-2)] px-3 text-left align-middle text-[12px] font-medium normal-case tracking-normal text-[var(--muted)] whitespace-nowrap";
@@ -42,6 +45,7 @@ export function AdminPad({
   );
 }
 
+/** Full-bleed list page — title/toolbar render in the shell topbar. */
 export function DataSheet({
   title,
   toolbar,
@@ -57,20 +61,7 @@ export function DataSheet({
 }) {
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      {title || toolbar ? (
-        <div className="flex shrink-0 flex-col gap-2 border-b border-[var(--border)] px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center">
-          {title ? (
-            <div className="min-w-0 shrink-0 px-1 text-[14px] font-medium text-[var(--text)]">
-              {title}
-            </div>
-          ) : null}
-          {toolbar ? (
-            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
-              {toolbar}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <SetPageHeader title={title} actions={toolbar} />
       <div className={cn("min-h-0 flex-1 overflow-auto", bodyClassName)}>{children}</div>
     </div>
   );
